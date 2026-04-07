@@ -25,12 +25,16 @@ import { appendMissedTripHistory } from "@/lib/driver/tripHistoryStorage";
 import { tryAssignTrip } from "@/lib/driver/tripAssignment";
 import { DriverAppMode } from "@/lib/driver/appMode";
 import { useDriverAppMode } from "@/hooks/useDriverAppMode";
-import { connectDriverSocket, emitDriverAvailability } from "@/lib/socket/driverSocketClient";
+import { useDriverSocket } from "@/hooks/useDriverSocket";
+import { useSocket } from "@/hooks/useSocket";
+import DriverIncomingTripsPanel from "@/components/liftngo/DriverIncomingTripsPanel";
+import { disconnectDriverSocket, emitDriverAvailability } from "@/lib/socket/driverSocketClient";
 import { TripStatus } from "@/lib/trip/tripStatus";
 import { useDriverAvailabilityStore } from "@/stores/driverAvailabilityStore";
 import { useDriverEngagedTimeStore } from "@/stores/driverEngagedTimeStore";
 import { useDriverSuspensionStore } from "@/stores/driverSuspensionStore";
 import { useDriverTripStore } from "@/stores/driverTripStore";
+import { useDriverDispatchStore } from "@/stores/driverDispatchStore";
 import { useDriverWalletStore } from "@/stores/driverWalletStore";
 import type { SideMenuAction } from "@/components/driver/DriverSideMenu";
 
@@ -111,7 +115,20 @@ function DashboardContent() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const driverSocketUserId = useMemo(
+    () => parseDriverToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY))?.phone ?? null,
+    [],
+  );
+
+  const { connected: socketConnected } = useSocket(driverSocketUserId, "DRIVER");
+
+  const driverAuthToken = useMemo(
+    () => (typeof window !== "undefined" ? localStorage.getItem(DRIVER_AUTH_TOKEN_KEY) : null),
+    [],
+  );
+
+  useDriverSocket({ enabled: Boolean(driverSocketUserId), authToken: driverAuthToken });
+
   const [socketHadConnected, setSocketHadConnected] = useState(false);
   const [notificationBadgeTick, setNotificationBadgeTick] = useState(0);
   const [incomingOrder, setIncomingOrder] = useState<IncomingOrderRequest | null>(null);
@@ -173,29 +190,11 @@ function DashboardContent() {
   }, [isSuspended, setReceivingTrips]);
 
   useEffect(() => {
-    const token = localStorage.getItem(DRIVER_AUTH_TOKEN_KEY);
-    const phone = parseDriverToken(token)?.phone ?? "unknown";
-    const s = connectDriverSocket(phone);
-    const onConnect = () => {
+    if (socketConnected) {
       setSocketHadConnected(true);
-      setSocketConnected(true);
       emitAvailabilitySynced();
-    };
-    const onDisconnect = () => setSocketConnected(false);
-    s.on("connect", onConnect);
-    s.on("disconnect", onDisconnect);
-    if (s.connected) {
-      setSocketHadConnected(true);
-      setSocketConnected(true);
-      emitAvailabilitySynced();
-    } else {
-      setSocketConnected(false);
     }
-    return () => {
-      s.off("connect", onConnect);
-      s.off("disconnect", onDisconnect);
-    };
-  }, []);
+  }, [socketConnected]);
 
   useEffect(() => {
     const done = useDriverTripStore.persist.onFinishHydration(() => {
@@ -254,6 +253,8 @@ function DashboardContent() {
     localStorage.removeItem(DRIVER_AUTH_TOKEN_KEY);
     sessionStorage.removeItem(DRIVER_LOGIN_PHONE_SESSION_KEY);
     clearDriverOnboardingProfile();
+    disconnectDriverSocket();
+    useDriverDispatchStore.getState().reset();
     setSideMenuOpen(false);
     routerRef.current.replace("/driver/login");
   }, [clearSelfie, clearVehicle]);
@@ -456,6 +457,7 @@ function DashboardContent() {
                 onOpenPartnerTier={() => routerRef.current.push("/driver/partner-tier")}
                 onOpenTripHistory={() => routerRef.current.push("/driver/trip-history")}
               />
+              <DriverIncomingTripsPanel hidden={Boolean(activeTrip)} />
             </div>
           </div>
           <DriverAvailabilityBottomCta

@@ -1,69 +1,80 @@
-import { io, type Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import type { DriverSegment } from "@/lib/driver/driverSegment";
+import {
+  connectSocket,
+  disconnectSocket,
+  emitJoinTrip,
+  getSocket,
+  getSocketSession,
+  LIFTNGO_SOCKET_EVENTS,
+} from "@/services/socket";
 import { DriverEventType, SocketEvents, type TripSyncPayload } from "@/lib/socket/socketEvents";
+import type { TripStatusPayload } from "@/types/liftngoSocket";
 
-const DEFAULT_URL = "http://127.0.0.1:3001";
-
-function socketUrl(): string {
-  if (typeof window === "undefined") return DEFAULT_URL;
-  return process.env.NEXT_PUBLIC_SOCKET_URL || DEFAULT_URL;
+/** Legacy + LiftNGo: join driver channel and restore trip room after (re)connect. */
+function onDriverLegacyConnect() {
+  const sess = getSocketSession();
+  if (!sess || sess.role !== "DRIVER") return;
+  const s = getSocket();
+  if (!s) return;
+  const driverId = sess.userId;
+  s.emit(SocketEvents.JOIN_DRIVER, { driverId });
+  const lastTripId = typeof window !== "undefined" ? sessionStorage.getItem("liftngo_last_trip_id") : null;
+  if (lastTripId) {
+    s.emit(SocketEvents.JOIN_TRIP, { tripId: lastTripId, driverId });
+    emitJoinTrip(lastTripId, "DRIVER");
+    s.emit(SocketEvents.TRIP_RESYNC_REQUEST, { tripId: lastTripId, driverId });
+  }
 }
 
-let socket: Socket | null = null;
-let driverIdCache: string | null = null;
+type SocketWithLegacy = Socket & { _liftngoDriverLegacy?: boolean };
+
+function ensureDriverLegacyConnectListener() {
+  const s = getSocket() as SocketWithLegacy | null;
+  if (!s) return;
+  if (s._liftngoDriverLegacy) {
+    if (s.connected) onDriverLegacyConnect();
+    return;
+  }
+  s.on("connect", onDriverLegacyConnect);
+  s._liftngoDriverLegacy = true;
+  if (s.connected) onDriverLegacyConnect();
+}
 
 export function getDriverSocket(): Socket | null {
-  return socket;
+  return getSocket();
 }
 
+/**
+ * Driver entry point: shared auth socket + legacy `join_driver` / trip room behaviour.
+ */
 export function connectDriverSocket(driverId: string): Socket {
-  driverIdCache = driverId;
-  if (socket?.connected) {
-    socket.emit(SocketEvents.JOIN_DRIVER, { driverId });
-    return socket;
-  }
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-  }
-
-  const s = io(socketUrl(), {
-    transports: ["websocket", "polling"],
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10_000,
-  });
-
-  s.on("connect", () => {
-    s.emit(SocketEvents.JOIN_DRIVER, { driverId });
-    const lastTripId = typeof window !== "undefined" ? sessionStorage.getItem("liftngo_last_trip_id") : null;
-    if (lastTripId) {
-      s.emit(SocketEvents.JOIN_TRIP, { tripId: lastTripId, driverId });
-      s.emit(SocketEvents.TRIP_RESYNC_REQUEST, { tripId: lastTripId, driverId });
-    }
-  });
-
-  s.on("connect_error", () => {
-    /* UI can poll; socket.io retries */
-  });
-
-  socket = s;
+  const s = connectSocket(driverId, "DRIVER");
+  ensureDriverLegacyConnectListener();
   return s;
 }
 
 export function disconnectDriverSocket(): void {
-  socket?.disconnect();
-  socket = null;
-  driverIdCache = null;
+  const s = getSocket() as SocketWithLegacy | null;
+  if (s) {
+    s.off("connect", onDriverLegacyConnect);
+    delete s._liftngoDriverLegacy;
+  }
+  disconnectSocket();
 }
 
 export function joinTripRoom(tripId: string): void {
   if (typeof window !== "undefined") {
     sessionStorage.setItem("liftngo_last_trip_id", tripId);
   }
-  const id = driverIdCache || "unknown";
-  socket?.emit(SocketEvents.JOIN_TRIP, { tripId, driverId: id });
+  const sess = getSocketSession();
+  const s = getSocket();
+  if (!s) return;
+  const driverId = sess?.role === "DRIVER" ? sess.userId : "unknown";
+  s.emit(SocketEvents.JOIN_TRIP, { tripId, driverId });
+  if (sess?.role === "DRIVER") {
+    emitJoinTrip(tripId, "DRIVER");
+  }
 }
 
 export function leaveTripRoom(): void {
@@ -73,11 +84,12 @@ export function leaveTripRoom(): void {
 }
 
 export function emitDriverEvent(payload: TripSyncPayload): void {
-  if (!socket?.connected) return;
-  socket.emit(SocketEvents.DRIVER_EVENT, {
+  const s = getSocket();
+  if (!s?.connected) return;
+  s.emit(SocketEvents.DRIVER_EVENT, {
     ...payload,
     ts: Date.now(),
-    driverId: driverIdCache || undefined,
+    driverId: getSocketSession()?.userId,
   });
 }
 
@@ -89,30 +101,43 @@ export function emitStatusUpdate(tripId: string, status: string): void {
   });
 }
 
-/** Sync availability + partner segment for dispatch priority when socket is connected. */
 export function emitDriverAvailability(available: boolean, segment?: DriverSegment): void {
-  const s = socket;
-  if (!s?.connected || driverIdCache == null) return;
+  const s = getSocket();
+  const driverId = getSocketSession()?.userId;
+  if (!s?.connected || driverId == null) return;
   s.emit(SocketEvents.DRIVER_AVAILABILITY, {
-    driverId: driverIdCache,
+    driverId,
     available,
     segment,
     ts: Date.now(),
   });
 }
 
+/** Legacy `trip:sync` plus backend `trip:status` (mapped into the same handler shape). */
 export function onTripSync(handler: (payload: TripSyncPayload) => void): () => void {
-  const s = socket;
+  const s = getSocket();
   if (!s) return () => {};
-  const fn = (p: TripSyncPayload) => handler(p);
-  s.on(SocketEvents.TRIP_SYNC, fn);
+
+  const onLegacy = (p: TripSyncPayload) => handler(p);
+
+  const onLiftngoStatus = (p: TripStatusPayload) => {
+    handler({
+      type: DriverEventType.TRIP_STATUS_UPDATE,
+      tripId: p.tripId,
+      status: p.status,
+    });
+  };
+
+  s.on(SocketEvents.TRIP_SYNC, onLegacy);
+  s.on(LIFTNGO_SOCKET_EVENTS.TRIP_STATUS, onLiftngoStatus);
   return () => {
-    s.off(SocketEvents.TRIP_SYNC, fn);
+    s.off(SocketEvents.TRIP_SYNC, onLegacy);
+    s.off(LIFTNGO_SOCKET_EVENTS.TRIP_STATUS, onLiftngoStatus);
   };
 }
 
 export function onTripCancelled(handler: (payload: { tripId: string; reason?: string }) => void): () => void {
-  const s = socket;
+  const s = getSocket();
   if (!s) return () => {};
   const fn = (p: { tripId: string; reason?: string }) => handler(p);
   s.on(SocketEvents.TRIP_CANCELLED, fn);
