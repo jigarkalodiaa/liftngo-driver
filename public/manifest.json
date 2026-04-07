@@ -1,0 +1,18 @@
+{
+  "name": "Liftngo Drivers — Partner hub",
+  "short_name": "Liftngo Drivers",
+  "description": "Driver partner hub for Liftngo goods delivery and cargo trips in India.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2C2D5B",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
