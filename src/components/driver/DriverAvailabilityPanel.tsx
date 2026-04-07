@@ -10,16 +10,12 @@ type DriverAvailabilityPanelProps = {
   isReceivingTrips: boolean;
   /** Show “waiting for trips” nudge (online, not showing order sheet). */
   showWaitingNudge: boolean;
-  onGoOnline: () => void;
-  onGoOffline: () => void;
 };
 
 function DriverAvailabilityPanel({
   hidden,
   isReceivingTrips,
   showWaitingNudge,
-  onGoOnline,
-  onGoOffline,
 }: DriverAvailabilityPanelProps) {
   const { t } = useLocale();
 
@@ -80,29 +76,6 @@ function DriverAvailabilityPanel({
           <p className="mt-2 text-xs font-semibold text-emerald-700">{t("dashboard.nudgeDemandHint")}</p>
           <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("dashboard.nudgeBonusHint")}</p>
         </div>
-      )}
-
-      {/* 3 — Primary toggle */}
-      {isReceivingTrips ? (
-        <motion.button
-          type="button"
-          layout
-          whileTap={{ scale: 0.99 }}
-          onClick={onGoOffline}
-          className="flex w-full items-center justify-center rounded-2xl border-2 border-rose-200 bg-white py-4 text-base font-bold text-rose-700 shadow-sm transition-colors hover:bg-rose-50"
-        >
-          {t("dashboard.goOfflineCta")}
-        </motion.button>
-      ) : (
-        <motion.button
-          type="button"
-          layout
-          whileTap={{ scale: 0.985 }}
-          onClick={onGoOnline}
-          className="flex w-full items-center justify-center rounded-2xl bg-emerald-600 py-4 text-base font-bold text-white shadow-[0_8px_24px_rgba(5,150,105,0.35)] transition-colors hover:bg-emerald-700"
-        >
-          {t("dashboard.goOnlineCta")}
-        </motion.button>
       )}
     </div>
   );

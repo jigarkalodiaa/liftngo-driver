@@ -182,10 +182,10 @@ export default function NewOrderRequestSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-[35] bg-black/20" aria-hidden />
+      <div className="fixed inset-0 z-[52] bg-black/25" aria-hidden />
 
       <div
-        className="fixed inset-x-0 bottom-0 z-[40] max-h-[72vh] overflow-y-auto rounded-t-3xl border-t border-[var(--color-gray-200)] bg-white shadow-[0_-12px_40px_rgba(0,0,0,0.15)]"
+        className="fixed inset-x-0 bottom-0 z-[53] max-h-[72vh] overflow-y-auto rounded-t-3xl border-t border-[var(--color-gray-200)] bg-white shadow-[0_-12px_40px_rgba(0,0,0,0.15)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-order-title"

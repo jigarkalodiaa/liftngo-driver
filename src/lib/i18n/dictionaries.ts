@@ -168,6 +168,12 @@ const en: Record<string, any> = {
     partnerTierBenefit1: "Trip requests can reach you sooner when many customers are booking at once.",
     partnerTierBenefit2: "Same fares and partner support — priority is about faster matching in busy periods.",
     partnerTierBenefit3: "Keep completing trips reliably and keep cancellations low to stay in the premium pool.",
+    partnerTierPageTitle: "Partner score & tier",
+    partnerTierUnavailable:
+      "Partner metrics are not in your session. Sign out and sign in again to load your score and tier.",
+    partnerTierStripAria: "Partner score and tier — view full details",
+    partnerTierStripScore: "Score {score}/100",
+    partnerTierStripCancel: "{pct}% cancellations",
   },
   applicationReview: {
     header: "Verification in progress",
@@ -645,6 +651,12 @@ const hi: Record<string, any> = {
     partnerTierBenefit1: "जब बहुत सारे ग्राहक एक साथ बुक करें तो अनुरोध आप तक पहले पहुँच सकते हैं।",
     partnerTierBenefit2: "किराया और सहायता वही — प्राथमिकता का मतलब व्यस्त समय में जल्दी मैचिंग।",
     partnerTierBenefit3: "प्रीमियम पूल में बने रहने के लिए ट्रिप पूरी करें और रद्दी कम रखें।",
+    partnerTierPageTitle: "साझेदार स्कोर व स्तर",
+    partnerTierUnavailable:
+      "सत्र में साझेदार मेट्रिक्स नहीं हैं। स्कोर व स्तर लोड करने के लिए साइन आउट कर फिर साइन इन करें।",
+    partnerTierStripAria: "साझेदार स्कोर व स्तर — पूरा विवरण देखें",
+    partnerTierStripScore: "स्कोर {score}/100",
+    partnerTierStripCancel: "{pct}% रद्दीकरण",
   },
   applicationReview: {
     header: "सत्यापन जारी",

@@ -4,8 +4,9 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import DriverAvailabilityBottomCta from "@/components/driver/DriverAvailabilityBottomCta";
 import DriverAvailabilityPanel from "@/components/driver/DriverAvailabilityPanel";
-import DriverPartnerTierCard from "@/components/driver/DriverPartnerTierCard";
+import DriverPartnerTierStrip from "@/components/driver/DriverPartnerTierStrip";
 import DashboardWalletSummary from "@/components/driver/DashboardWalletSummary";
 import DriverConnectivityBanner from "@/components/driver/DriverConnectivityBanner";
 import { BellIcon, MenuIcon } from "@/components/icons";
@@ -312,7 +313,7 @@ function DashboardContent() {
 
       {!isTripMode ? (
         <header
-          className={`sticky top-0 z-50 flex shrink-0 items-start justify-between border-b border-white/30 bg-[#DCD9CF]/90 px-4 pb-3 shadow-sm backdrop-blur-md ${
+          className={`sticky top-0 z-[51] flex shrink-0 items-start justify-between border-b border-white/30 bg-[#DCD9CF]/90 px-4 pb-3 shadow-sm backdrop-blur-md ${
             showConnectivityPad ? "pt-12 sm:pt-14" : "pt-[max(1rem,env(safe-area-inset-top))]"
           }`}
         >
@@ -358,19 +359,25 @@ function DashboardContent() {
       ) : null}
 
       {!isTripMode ? (
-        <div className="relative z-40 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-4 pb-8 pt-3 pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto">
-          <DriverAvailabilityPanel
+        <>
+          <div className="relative z-[20] flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-4 pb-4 pt-3 pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto">
+            <DriverAvailabilityPanel
+              hidden={false}
+              isReceivingTrips={isReceivingTrips}
+              showWaitingNudge={isReceivingTrips && !incomingOrder}
+            />
+            <div className="mt-3 space-y-3">
+              <DriverPartnerTierStrip hidden={false} />
+              <DashboardWalletSummary onOpen={openWallet} />
+            </div>
+          </div>
+          <DriverAvailabilityBottomCta
             hidden={false}
             isReceivingTrips={isReceivingTrips}
-            showWaitingNudge={isReceivingTrips && !incomingOrder}
             onGoOnline={onGoOnline}
             onGoOffline={onGoOffline}
           />
-          <div className="mt-3 space-y-3">
-            <DriverPartnerTierCard hidden={false} />
-            <DashboardWalletSummary onOpen={openWallet} />
-          </div>
-        </div>
+        </>
       ) : null}
     </div>
   );

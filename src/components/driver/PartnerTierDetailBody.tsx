@@ -1,18 +1,12 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { useLocale } from "@/context/LocaleContext";
-import { DRIVER_AUTH_TOKEN_KEY } from "@/lib/driver/authConstants";
-import { getDriverTaggingFromToken } from "@/lib/driver/authToken";
 import {
   DriverSegment,
   PREMIUM_MAX_CANCELLATION_RATE_PCT,
   PREMIUM_MIN_PERFORMANCE_SCORE,
+  type DriverSegmentPayload,
 } from "@/lib/driver/driverSegment";
-
-type DriverPartnerTierCardProps = {
-  hidden: boolean;
-};
 
 function CriterionRow({
   label,
@@ -45,15 +39,13 @@ function CriterionRow({
   );
 }
 
-function DriverPartnerTierCardInner({ hidden }: DriverPartnerTierCardProps) {
+type PartnerTierDetailBodyProps = {
+  tagging: DriverSegmentPayload;
+};
+
+/** Full partner tier explanation (detail screen). */
+export default function PartnerTierDetailBody({ tagging }: PartnerTierDetailBodyProps) {
   const { t } = useLocale();
-
-  const tagging = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    return getDriverTaggingFromToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY));
-  }, []);
-
-  if (hidden || !tagging) return null;
 
   const perfOk = tagging.performanceScore >= PREMIUM_MIN_PERFORMANCE_SCORE;
   const cancelOk = tagging.cancellationRatePct < PREMIUM_MAX_CANCELLATION_RATE_PCT;
@@ -69,7 +61,7 @@ function DriverPartnerTierCardInner({ hidden }: DriverPartnerTierCardProps) {
 
   return (
     <div
-      className={`pointer-events-auto rounded-2xl border px-4 py-3 shadow-sm ${
+      className={`rounded-2xl border px-4 py-3 shadow-sm ${
         isPremium
           ? "border-amber-200/90 bg-gradient-to-br from-amber-50/90 to-white"
           : "border-[var(--color-gray-200)] bg-white"
@@ -77,7 +69,7 @@ function DriverPartnerTierCardInner({ hidden }: DriverPartnerTierCardProps) {
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-bold text-[var(--color-text-primary)]">{t("dashboard.partnerTierTitle")}</h3>
+          <h2 className="text-sm font-bold text-[var(--color-text-primary)]">{t("dashboard.partnerTierTitle")}</h2>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
             {t("dashboard.partnerTierSubtitle")}
           </p>
@@ -146,5 +138,3 @@ function DriverPartnerTierCardInner({ hidden }: DriverPartnerTierCardProps) {
     </div>
   );
 }
-
-export default memo(DriverPartnerTierCardInner);
