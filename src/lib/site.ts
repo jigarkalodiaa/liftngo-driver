@@ -14,7 +14,7 @@ export const SITE_URL = stripTrailingSlashes(
 export const SITE_NAME = 'Liftngo Drivers';
 
 export const FAVICON_PATH = '/favicon.png';
-export const LOGO_PATH = '/logo.png';
+export const LOGO_PATH = '/logo-liftngo.png';
 export const LOGO_URL = `${SITE_URL}${LOGO_PATH}`;
 
 export const META_TITLE = 'Liftngo Drivers | Partner for goods delivery & cargo trips';

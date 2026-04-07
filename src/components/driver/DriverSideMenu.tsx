@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+import BrandLogo from "@/components/layout/BrandLogo";
+import { XMarkIcon } from "@/components/icons";
 import { useLocale } from "@/context/LocaleContext";
 
 export type SideMenuAction =
@@ -61,11 +63,23 @@ export default function DriverSideMenu({ open, onClose, onSelect }: DriverSideMe
         transition={{ type: "spring", stiffness: 300, damping: 32 }}
         className="relative flex h-full w-[min(100%,320px)] flex-col bg-white shadow-xl"
       >
-        <div className="border-b border-[var(--color-gray-200)] px-4 py-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-secondary)]">
-            {t("dashboard.sideMenuTitle")}
-          </p>
-          <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">LiftNGo</p>
+        <div className="border-b border-[var(--color-gray-200)] px-3 py-3 pr-2">
+          <div className="flex items-start justify-between gap-2">
+            <p className="pl-1 pt-1 text-xs font-bold uppercase tracking-wide text-[var(--color-text-secondary)]">
+              {t("dashboard.sideMenuTitle")}
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-gray-100)]"
+              aria-label={t("dashboard.sideMenuClose")}
+            >
+              <XMarkIcon className="size-6" />
+            </button>
+          </div>
+          <div className="mt-2 pl-1">
+            <BrandLogo className="h-9 w-auto max-w-[180px]" width={180} height={40} />
+          </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           <Item label={t("dashboard.sideProfile")} onClick={() => onSelect("profile")} />

@@ -156,7 +156,12 @@ function PrimaryActionBlock({
   }
 }
 
-export default function DriverTripLifecycleView() {
+type DriverTripLifecycleViewProps = {
+  /** Extra top padding when global connectivity banner is shown (socket / offline). */
+  connectivityPad?: boolean;
+};
+
+export default function DriverTripLifecycleView({ connectivityPad = false }: DriverTripLifecycleViewProps) {
   const { t } = useLocale();
   const trip = useDriverTripStore((s) => s.activeTrip);
   const actionLoading = useDriverTripStore((s) => s.actionLoading);
@@ -252,6 +257,7 @@ export default function DriverTripLifecycleView() {
         completedAt: Date.now(),
         driverShareInr: effect.driverShare,
         commissionInr: effect.commission,
+        outcome: "completed",
       });
       setEarningsData({
         orderId: snap.orderId,
@@ -288,7 +294,11 @@ export default function DriverTripLifecycleView() {
 
   return (
     <div className="fixed inset-0 z-[90] flex flex-col bg-[var(--color-gray-50)]">
-      <header className="flex shrink-0 items-center gap-3 border-b border-[var(--color-gray-200)] bg-white px-3 py-3 shadow-sm">
+      <header
+        className={`flex shrink-0 items-center gap-3 border-b border-[var(--color-gray-200)] bg-white px-3 pb-3 shadow-sm ${
+          connectivityPad ? "pt-12 sm:pt-14" : "pt-[max(0.75rem,env(safe-area-inset-top))]"
+        }`}
+      >
         <button
           type="button"
           onClick={() => {

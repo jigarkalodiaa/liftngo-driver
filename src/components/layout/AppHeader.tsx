@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, MenuIcon } from "@/components/icons";
+import BrandLogo from "@/components/layout/BrandLogo";
 
 type AppHeaderProps = {
   title: string;
@@ -37,7 +38,10 @@ export default function AppHeader({
         <span className="w-8" />
       )}
 
-      <span className="text-sm font-semibold text-[var(--color-text-primary)]">{title}</span>
+      <div className="flex min-w-0 flex-1 items-center justify-center gap-2.5 px-1">
+        <BrandLogo variant="compact" className="h-7 w-auto max-w-[100px] shrink-0" />
+        <span className="min-w-0 truncate text-sm font-semibold text-[var(--color-text-primary)]">{title}</span>
+      </div>
 
       {showMenu ? (
         <button

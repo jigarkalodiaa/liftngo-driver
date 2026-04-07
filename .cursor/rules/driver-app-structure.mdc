@@ -1,0 +1,47 @@
+---
+description: Liftngo driver app — folder layout, layouts, and client/server conventions (align with shared Next.js patterns).
+globs: src/**/*
+alwaysApply: false
+---
+
+# Driver app structure & conventions
+
+## Target shape (evolve toward; avoid big-bang moves)
+
+| Area | Role |
+|------|------|
+| `src/app/` | Routes, `layout.tsx`, `page.tsx`, `loading.tsx`; API in `app/api/**/route.ts` |
+| `src/app/(driver)/` | Optional route group for driver-only shell vs other surfaces |
+| `src/components/ui/` | Reusable primitives (Button, Modal) |
+| `src/components/layout/` | Shells: `AuthGuard`, headers, `BrandLogo` |
+| `src/features/<feature>/` | Optional: colocate `components/`, `hooks/`, `utils/` per product area |
+| `src/hooks/` | Shared hooks |
+| `src/lib/` | Auth helpers, domain logic, constants, socket clients |
+| `src/stores/` | Zustand for client UI / persisted driver state |
+| `src/types/` | Shared TS types when not colocated |
+| `src/services/` | Typed HTTP/API functions (e.g. `driverEarningsService`) |
+| `src/config/` | Feature flags, env (`driverDataSource.ts`, etc.) |
+
+Use **barrel `index.ts` only** where it clearly helps imports; do not barrel everything.
+
+## Layout / header pattern
+
+- **Root / driver `layout.tsx`**: fonts, providers, max-width shell, safe-area-friendly container.
+- **Stacked screens**: `AppHeader` — back + title (+ optional right action). Dashboard home may omit full page header; trip uses full-screen `DriverTripLifecycleView`.
+- **Guards**: Prefer one guard per segment (`AuthGuard`, `VerifiedDriverGuard`) rather than duplicating checks on every page.
+
+## Stack practices
+
+- **Server Components by default**; `'use client'` for hooks, browser APIs, and interactive leaves.
+- **TanStack Query** for server state when APIs grow; **Zustand** for cross-UI client state (trip, wallet, availability) already in use.
+- **One API layer**: central fetch/axios wrapper + typed functions under `src/lib/` or `src/api/` when expanded.
+- **Routes**: shared path constants in `src/lib/` (e.g. onboarding routes) to avoid string drift.
+
+## Quality gate
+
+- Run **ESLint** and **`next build`** before merging structural refactors.
+
+## Do not change without product sign-off
+
+- Trip **status machine** and allowed transitions (`src/lib/trip/tripStatus.ts`).
+- **Backend contracts** for verify-otp, sockets, and assignment APIs.

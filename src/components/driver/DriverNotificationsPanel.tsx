@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { XMarkIcon } from "@/components/icons";
 import { useLocale } from "@/context/LocaleContext";
 import type { DriverNotificationId } from "@/lib/driver/driverNotificationsStorage";
 import {
@@ -87,13 +88,14 @@ export default function DriverNotificationsPanel({
   if (!open) return null;
 
   const dateLocale = activeLocale === "hi" ? "hi-IN" : "en-IN";
+  const closeLabel = t("dashboard.notificationsClose");
 
   return (
     <div className="fixed inset-0 z-[75] flex justify-end">
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
-        aria-label={t("dashboard.notificationsClose")}
+        aria-label={closeLabel}
         onClick={onClose}
       />
       <div
@@ -119,9 +121,10 @@ export default function DriverNotificationsPanel({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--color-gray-50)]"
+              className="flex size-10 items-center justify-center rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-gray-100)]"
+              aria-label={closeLabel}
             >
-              {t("dashboard.notificationsClose")}
+              <XMarkIcon className="size-6" />
             </button>
           </div>
         </div>

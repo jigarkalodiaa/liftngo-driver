@@ -10,10 +10,12 @@ type DriverConnectivityBannerProps = {
   socketHadConnected: boolean;
   /** Driver is "online" for trips and not on an active trip — offers need live connection. */
   expectingTripAssignments: boolean;
+  /** Active trip — show trip-specific socket copy so drivers know local steps still work. */
+  activeTrip: boolean;
 };
 
 /**
- * Top-of-screen clarity: internet vs server link when trip offers depend on it.
+ * Top-of-screen clarity: internet vs server link when offers or live trip sync depend on it.
  * Avoids technical jargon; pairs with local online/offline intent.
  */
 function DriverConnectivityBanner({
@@ -21,22 +23,39 @@ function DriverConnectivityBanner({
   socketConnected,
   socketHadConnected,
   expectingTripAssignments,
+  activeTrip,
 }: DriverConnectivityBannerProps) {
   const { t } = useLocale();
 
   const showNoInternet = !browserOnline;
-  const showSocketProblem =
-    browserOnline && expectingTripAssignments && !socketConnected && socketHadConnected;
-  const showSocketConnecting =
-    browserOnline && expectingTripAssignments && !socketConnected && !socketHadConnected;
+  const showTripSocketProblem =
+    activeTrip && browserOnline && !socketConnected && socketHadConnected;
+  const showTripSocketConnecting =
+    activeTrip && browserOnline && !socketConnected && !socketHadConnected;
+  const showIdleSocketProblem =
+    !activeTrip &&
+    browserOnline &&
+    expectingTripAssignments &&
+    !socketConnected &&
+    socketHadConnected;
+  const showIdleSocketConnecting =
+    !activeTrip &&
+    browserOnline &&
+    expectingTripAssignments &&
+    !socketConnected &&
+    !socketHadConnected;
 
   const messageKey = showNoInternet
     ? "dashboard.bannerNoInternet"
-    : showSocketProblem
-      ? "dashboard.bannerSocketIssue"
-      : showSocketConnecting
-        ? "dashboard.bannerSocketConnecting"
-        : null;
+    : showTripSocketProblem
+      ? "dashboard.bannerSocketTripIssue"
+      : showTripSocketConnecting
+        ? "dashboard.bannerSocketTripConnecting"
+        : showIdleSocketProblem
+          ? "dashboard.bannerSocketIssue"
+          : showIdleSocketConnecting
+            ? "dashboard.bannerSocketConnecting"
+            : null;
 
   const visible = messageKey !== null;
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { XMarkIcon } from "@/components/icons";
 import { useLocale } from "@/context/LocaleContext";
 
 /** Placeholder helpline — replace with your real support number. */
@@ -26,23 +27,30 @@ export default function DriverSupportSheet({ open, onClose }: DriverSupportSheet
 
   if (!open) return null;
 
+  const closeLabel = t("dashboard.supportClose");
+
   return (
     <div className="fixed inset-0 z-[85] flex items-end justify-center p-4 sm:items-center">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/45"
-        aria-label={t("dashboard.supportClose")}
-        onClick={onClose}
-      />
+      <button type="button" className="absolute inset-0 bg-black/45" aria-label={closeLabel} onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="driver-support-title"
-        className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+        className="relative w-full max-w-md rounded-2xl bg-white p-5 pb-4 shadow-xl"
       >
-        <h2 id="driver-support-title" className="text-lg font-bold text-[var(--color-text-primary)]">
-          {t("dashboard.supportTitle")}
-        </h2>
+        <div className="flex items-start justify-between gap-2">
+          <h2 id="driver-support-title" className="text-lg font-bold text-[var(--color-text-primary)]">
+            {t("dashboard.supportTitle")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-gray-100)]"
+            aria-label={closeLabel}
+          >
+            <XMarkIcon className="size-6" />
+          </button>
+        </div>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{t("dashboard.supportIntro")}</p>
 
         <div className="mt-5 space-y-3">
@@ -61,14 +69,6 @@ export default function DriverSupportSheet({ open, onClose }: DriverSupportSheet
         </div>
 
         <p className="mt-4 text-center text-xs text-[var(--color-text-secondary)]">{t("dashboard.supportHours")}</p>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-5 w-full rounded-xl border border-[var(--color-gray-200)] py-3 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-gray-50)]"
-        >
-          {t("dashboard.supportClose")}
-        </button>
       </div>
     </div>
   );

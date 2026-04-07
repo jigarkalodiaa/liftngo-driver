@@ -11,6 +11,7 @@ import DashboardWalletSummary from "@/components/driver/DashboardWalletSummary";
 import DriverConnectivityBanner from "@/components/driver/DriverConnectivityBanner";
 import { BellIcon, MenuIcon } from "@/components/icons";
 import AuthGuard from "@/components/layout/AuthGuard";
+import BrandLogo from "@/components/layout/BrandLogo";
 import VerifiedDriverGuard from "@/components/layout/VerifiedDriverGuard";
 import { useLocale } from "@/context/LocaleContext";
 import { useDriverSelfie } from "@/context/DriverSelfieContext";
@@ -20,12 +21,15 @@ import { getDriverTaggingFromToken, parseDriverToken } from "@/lib/driver/authTo
 import { clearDriverOnboardingProfile } from "@/lib/driver/driverOnboardingProfile";
 import { DRIVER_NOTIFICATION_IDS, loadReadNotificationIds } from "@/lib/driver/driverNotificationsStorage";
 import { DUMMY_INCOMING_ORDER, type IncomingOrderRequest } from "@/lib/driver/dummyOrderRequest";
+import { appendMissedTripHistory } from "@/lib/driver/tripHistoryStorage";
 import { tryAssignTrip } from "@/lib/driver/tripAssignment";
 import { DriverAppMode } from "@/lib/driver/appMode";
 import { useDriverAppMode } from "@/hooks/useDriverAppMode";
 import { connectDriverSocket, emitDriverAvailability } from "@/lib/socket/driverSocketClient";
 import { TripStatus } from "@/lib/trip/tripStatus";
 import { useDriverAvailabilityStore } from "@/stores/driverAvailabilityStore";
+import { useDriverEngagedTimeStore } from "@/stores/driverEngagedTimeStore";
+import { useDriverSuspensionStore } from "@/stores/driverSuspensionStore";
 import { useDriverTripStore } from "@/stores/driverTripStore";
 import { useDriverWalletStore } from "@/stores/driverWalletStore";
 import type { SideMenuAction } from "@/components/driver/DriverSideMenu";
@@ -42,9 +46,11 @@ const DriverNotificationsPanel = dynamic(() => import("@/components/driver/Drive
 const DriverSupportSheet = dynamic(() => import("@/components/driver/DriverSupportSheet"));
 const NewOrderRequestSheet = dynamic(() => import("@/components/driver/NewOrderRequestSheet"));
 
-function emitAvailability(available: boolean) {
+function emitAvailabilitySynced() {
+  const receiving = useDriverAvailabilityStore.getState().isReceivingTrips;
+  const suspended = useDriverSuspensionStore.getState().isSuspended();
   const seg = getDriverTaggingFromToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY))?.segment;
-  emitDriverAvailability(available, seg);
+  emitDriverAvailability(receiving && !suspended, seg);
 }
 
 function MapPlaceholder() {
@@ -91,6 +97,14 @@ function DashboardContent() {
   const appMode = useDriverAppMode();
   const isReceivingTrips = useDriverAvailabilityStore((s) => s.isReceivingTrips);
   const setReceivingTrips = useDriverAvailabilityStore((s) => s.setReceivingTrips);
+  const suspensionPermanent = useDriverSuspensionStore((s) => s.permanent);
+  const suspensionUntilMs = useDriverSuspensionStore((s) => s.suspendedUntilMs);
+
+  const isSuspended = useMemo(
+    () =>
+      suspensionPermanent || (suspensionUntilMs != null && Date.now() < suspensionUntilMs),
+    [suspensionPermanent, suspensionUntilMs],
+  );
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -133,13 +147,39 @@ function DashboardContent() {
   }, []);
 
   useEffect(() => {
+    useDriverSuspensionStore.getState().refreshFromClock();
+  }, []);
+
+  useEffect(() => {
+    if (suspensionPermanent || suspensionUntilMs == null) return;
+    const delay = Math.max(0, suspensionUntilMs - Date.now() + 500);
+    const id = window.setTimeout(() => {
+      useDriverSuspensionStore.getState().refreshFromClock();
+    }, delay);
+    return () => window.clearTimeout(id);
+  }, [suspensionPermanent, suspensionUntilMs]);
+
+  useEffect(() => {
+    const onVis = () => useDriverSuspensionStore.getState().refreshFromClock();
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  useEffect(() => {
+    if (!isSuspended) return;
+    setReceivingTrips(false);
+    const seg = getDriverTaggingFromToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY))?.segment;
+    emitDriverAvailability(false, seg);
+  }, [isSuspended, setReceivingTrips]);
+
+  useEffect(() => {
     const token = localStorage.getItem(DRIVER_AUTH_TOKEN_KEY);
     const phone = parseDriverToken(token)?.phone ?? "unknown";
     const s = connectDriverSocket(phone);
     const onConnect = () => {
       setSocketHadConnected(true);
       setSocketConnected(true);
-      emitAvailability(useDriverAvailabilityStore.getState().isReceivingTrips);
+      emitAvailabilitySynced();
     };
     const onDisconnect = () => setSocketConnected(false);
     s.on("connect", onConnect);
@@ -147,7 +187,7 @@ function DashboardContent() {
     if (s.connected) {
       setSocketHadConnected(true);
       setSocketConnected(true);
-      emitAvailability(useDriverAvailabilityStore.getState().isReceivingTrips);
+      emitAvailabilitySynced();
     } else {
       setSocketConnected(false);
     }
@@ -168,15 +208,29 @@ function DashboardContent() {
   }, []);
 
   useEffect(() => {
-    if (!isReceivingTrips || appMode === DriverAppMode.TRIP_MODE) {
-      if (!isReceivingTrips) setIncomingOrder(null);
+    if (!isReceivingTrips || appMode === DriverAppMode.TRIP_MODE || isSuspended) {
+      if (!isReceivingTrips || isSuspended) setIncomingOrder(null);
       return;
     }
     const timerId = window.setTimeout(() => {
       setIncomingOrder(DUMMY_INCOMING_ORDER);
     }, 2200);
     return () => window.clearTimeout(timerId);
-  }, [isReceivingTrips, appMode]);
+  }, [isReceivingTrips, appMode, isSuspended]);
+
+  /** Partner-time signal (local): counts foreground time while online for trips or on an active trip. */
+  useEffect(() => {
+    const engaged = Boolean(activeTrip) || (isReceivingTrips && !isSuspended);
+    const pulse = () => useDriverEngagedTimeStore.getState().pulse(engaged);
+    pulse();
+    const id = window.setInterval(pulse, 5000);
+    const onVis = () => pulse();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [activeTrip, isReceivingTrips, isSuspended]);
 
   const unreadNotificationCount = useMemo(() => {
     void notificationBadgeTick;
@@ -190,9 +244,13 @@ function DashboardContent() {
     useDriverTripStore.getState().reset();
     useDriverWalletStore.getState().reset();
     useDriverAvailabilityStore.getState().reset();
+    useDriverSuspensionStore.getState().reset();
+    useDriverEngagedTimeStore.getState().reset();
     localStorage.removeItem("liftngo-driver-trip");
     localStorage.removeItem("liftngo-driver-wallet");
     localStorage.removeItem("liftngo-driver-availability");
+    localStorage.removeItem("liftngo-driver-suspension");
+    localStorage.removeItem("liftngo-driver-engaged-time");
     localStorage.removeItem(DRIVER_AUTH_TOKEN_KEY);
     sessionStorage.removeItem(DRIVER_LOGIN_PHONE_SESSION_KEY);
     clearDriverOnboardingProfile();
@@ -231,8 +289,10 @@ function DashboardContent() {
   );
 
   const onGoOnline = useCallback(() => {
+    useDriverSuspensionStore.getState().refreshFromClock();
+    if (useDriverSuspensionStore.getState().isSuspended()) return;
     setReceivingTrips(true);
-    emitAvailability(true);
+    emitAvailabilitySynced();
     toast.success(t("dashboard.nowOnlineCelebration"));
     if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
       navigator.vibrate([35, 25, 35]);
@@ -241,7 +301,7 @@ function DashboardContent() {
 
   const onGoOffline = useCallback(() => {
     setReceivingTrips(false);
-    emitAvailability(false);
+    emitAvailabilitySynced();
     toast.message(t("dashboard.offline"));
   }, [setReceivingTrips, t]);
 
@@ -268,13 +328,29 @@ function DashboardContent() {
   }, [clearIncomingOrder, t]);
 
   const handleOrderExpire = useCallback(() => {
-    toast(t("dashboard.requestTimeout"));
+    const order = incomingOrderRef.current;
+    toast.error(t("dashboard.requestMissedTripTitle"), {
+      description: t("dashboard.requestMissedTripBody"),
+      duration: 7000,
+    });
+    if (order) {
+      appendMissedTripHistory({
+        id: order.id,
+        fareInr: order.fareInr,
+        paymentMode: order.paymentMode,
+      });
+    }
     clearIncomingOrder();
+    const tagging = getDriverTaggingFromToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY));
+    const score = tagging?.performanceScore;
+    if (typeof score !== "number") return;
+    useDriverSuspensionStore.getState().recordMissWhenBelowThreshold(score);
   }, [clearIncomingOrder, t]);
 
   const isTripMode = appMode === DriverAppMode.TRIP_MODE;
-  const expectingTripAssignments = isReceivingTrips && !isTripMode;
-  const showConnectivityPad = !browserOnline || (expectingTripAssignments && !socketConnected);
+  const expectingTripAssignments = isReceivingTrips && !isTripMode && !isSuspended;
+  const showConnectivityPad =
+    !browserOnline || (!socketConnected && (expectingTripAssignments || isTripMode));
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden">
@@ -283,10 +359,11 @@ function DashboardContent() {
         socketConnected={socketConnected}
         socketHadConnected={socketHadConnected}
         expectingTripAssignments={expectingTripAssignments}
+        activeTrip={Boolean(activeTrip)}
       />
       <MapPlaceholder />
 
-      {activeTrip ? <DriverTripLifecycleView /> : null}
+      {activeTrip ? <DriverTripLifecycleView connectivityPad={showConnectivityPad} /> : null}
 
       <DriverSideMenu open={sideMenuOpen} onClose={closeSideMenu} onSelect={handleMenuSelect} />
 
@@ -313,14 +390,14 @@ function DashboardContent() {
 
       {!isTripMode ? (
         <header
-          className={`sticky top-0 z-[51] flex shrink-0 items-start justify-between border-b border-white/30 bg-[#DCD9CF]/90 px-4 pb-3 shadow-sm backdrop-blur-md ${
+          className={`sticky top-0 z-[51] flex shrink-0 items-center justify-between gap-2 border-b border-white/30 bg-[#DCD9CF]/90 px-4 pb-3 shadow-sm backdrop-blur-md ${
             showConnectivityPad ? "pt-12 sm:pt-14" : "pt-[max(1rem,env(safe-area-inset-top))]"
           }`}
         >
           <button
             type="button"
             onClick={openProfile}
-            className="relative flex size-12 items-center justify-center rounded-2xl border border-white/80 bg-white shadow-md"
+            className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white shadow-md"
             aria-label={t("dashboard.profile")}
           >
             <UserAvatarIcon className="text-[var(--color-gray-500)]" />
@@ -332,7 +409,11 @@ function DashboardContent() {
             />
           </button>
 
-          <div className="relative flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 justify-center px-1">
+            <BrandLogo variant="compact" className="h-8 w-auto max-w-[min(160px,42vw)] opacity-95" />
+          </div>
+
+          <div className="relative flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={openNotifications}
@@ -361,18 +442,24 @@ function DashboardContent() {
       {!isTripMode ? (
         <>
           <div className="relative z-[20] flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-4 pb-4 pt-3 pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto">
-            <DriverAvailabilityPanel
-              hidden={false}
-              isReceivingTrips={isReceivingTrips}
-              showWaitingNudge={isReceivingTrips && !incomingOrder}
-            />
+            <div className="pointer-events-auto space-y-3">
+              <DriverAvailabilityPanel
+                hidden={false}
+                isReceivingTrips={isReceivingTrips}
+                showWaitingNudge={isReceivingTrips && !incomingOrder}
+              />
+            </div>
             <div className="mt-3 space-y-3">
               <DriverPartnerTierStrip hidden={false} />
-              <DashboardWalletSummary onOpen={openWallet} />
+              <DashboardWalletSummary
+                onOpenWallet={openWallet}
+                onOpenPartnerTier={() => routerRef.current.push("/driver/partner-tier")}
+                onOpenTripHistory={() => routerRef.current.push("/driver/trip-history")}
+              />
             </div>
           </div>
           <DriverAvailabilityBottomCta
-            hidden={false}
+            hidden={isSuspended}
             isReceivingTrips={isReceivingTrips}
             onGoOnline={onGoOnline}
             onGoOffline={onGoOffline}

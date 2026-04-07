@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+import { XMarkIcon } from "@/components/icons";
 import { useLocale } from "@/context/LocaleContext";
 import { PaymentMode } from "@/lib/trip/tripStatus";
 
@@ -46,19 +47,33 @@ export default function TripEarningsSummarySheet({ open, onClose, data }: TripEa
       ? t("tripUX.earningsNetCredit", { amount: formatInr(data.walletDelta) })
       : t("tripUX.earningsNetDeduct", { amount: formatInr(Math.abs(data.walletDelta)) });
 
+  const dismissLabel = t("tripUX.earningsClose");
+
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center p-4 sm:items-center">
-      <button type="button" className="absolute inset-0 bg-black/45" aria-label={t("tripUX.earningsClose")} onClick={onClose} />
+      <button type="button" className="absolute inset-0 bg-black/45" aria-label={dismissLabel} onClick={onClose} />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
       >
-        <div className="border-b border-[var(--color-gray-100)] bg-[var(--color-primary)]/10 px-5 py-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">
-            {t("tripUX.earningsTitle")}
-          </p>
-          <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">{data.orderId}</p>
+        <div className="border-b border-[var(--color-gray-100)] bg-[var(--color-primary)]/10 px-4 py-3 pr-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 pl-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">
+                {t("tripUX.earningsTitle")}
+              </p>
+              <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">{data.orderId}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-primary)] hover:bg-black/5"
+              aria-label={dismissLabel}
+            >
+              <XMarkIcon className="size-6" />
+            </button>
+          </div>
         </div>
         <div className="space-y-3 px-5 py-4">
           <div className="flex justify-between text-sm">

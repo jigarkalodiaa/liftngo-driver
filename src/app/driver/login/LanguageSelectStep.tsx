@@ -45,7 +45,7 @@ export default function LanguageSelectStep({ onChosen }: LanguageSelectStepProps
 export function LanguageSelectHeader() {
   return (
     <header className="mb-8">
-      <BrandLogo />
+      <BrandLogo className="h-11 w-auto max-w-[220px]" width={200} height={48} />
     </header>
   );
 }

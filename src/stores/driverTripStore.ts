@@ -15,6 +15,7 @@ import {
 import { DriverEventType } from "@/lib/socket/socketEvents";
 import { PaymentMode, TripStatus, assertTransition, canTransition } from "@/lib/trip/tripStatus";
 import type { DriverTripSnapshot } from "@/lib/trip/tripTypes";
+import { appendTripHistory } from "@/lib/driver/tripHistoryStorage";
 import { computePaymentWalletEffect } from "@/lib/trip/walletLedger";
 import { useDriverWalletStore } from "@/stores/driverWalletStore";
 
@@ -164,6 +165,17 @@ export const useDriverTripStore = create<TripStore>()(
         const { activeTrip } = get();
         if (!activeTrip || activeTrip.tripId !== tripId) return;
         if (activeTrip.status === TripStatus.TRIP_COMPLETED) return;
+        appendTripHistory({
+          id: tripId,
+          orderId: activeTrip.orderId,
+          fareInr: activeTrip.fareInr,
+          paymentMode: activeTrip.paymentMode,
+          completedAt: Date.now(),
+          driverShareInr: 0,
+          commissionInr: 0,
+          outcome: "cancelled",
+          cancelReason: reason,
+        });
         leaveTripRoom();
         set({ activeTrip: null, paymentMismatchAlert: null });
         toast.error(reason || translateDriver("tripFlow.tripCancelled"));
