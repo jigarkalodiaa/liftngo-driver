@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheckIcon, SyncIcon } from "@/components/icons";
 import AppHeader from "@/components/layout/AppHeader";
@@ -15,25 +15,23 @@ import { useLocale } from "@/context/LocaleContext";
 function ApplicationReviewContent() {
   const { t } = useLocale();
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { clearSelfie } = useDriverSelfie();
   const { clearVehicle } = useDriverVehicle();
 
   useEffect(() => {
     const token = localStorage.getItem(DRIVER_AUTH_TOKEN_KEY);
     if (isDriverSessionVerified(token)) {
-      routerRef.current.replace(DRIVER_ONBOARDING.dashboard);
+      router.replace(DRIVER_ONBOARDING.dashboard);
     }
-  }, []);
+  }, [router]);
 
-  const handleSignOut = () => {
+  const handleSignOut = useCallback(() => {
     clearSelfie();
     clearVehicle();
     localStorage.removeItem(DRIVER_AUTH_TOKEN_KEY);
     sessionStorage.removeItem(DRIVER_LOGIN_PHONE_SESSION_KEY);
-    routerRef.current.replace("/driver/login");
-  };
+    router.replace("/driver/login");
+  }, [clearSelfie, clearVehicle, router]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-gray-50)]">

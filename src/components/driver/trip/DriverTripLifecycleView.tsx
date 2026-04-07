@@ -60,7 +60,7 @@ function toastForStatus(status: TripStatus, t: (k: string) => string): string | 
   }
 }
 
-function StatusChip({ trip, label }: { trip: DriverTripSnapshot; label: string }) {
+function StatusChip({ label }: { label: string }) {
   return (
     <span className="inline-block max-w-[120px] truncate rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--color-primary)]">
       {label}
@@ -314,7 +314,7 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
           <h1 className="text-sm font-bold text-[var(--color-text-primary)]">{t("tripFlow.activeTrip")}</h1>
           <p className="truncate text-xs text-[var(--color-text-secondary)]">{trip.orderId}</p>
         </div>
-        <StatusChip trip={trip} label={statusHuman} />
+        <StatusChip label={statusHuman} />
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 pb-32 pt-4">

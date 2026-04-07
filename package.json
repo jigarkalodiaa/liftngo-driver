@@ -7,7 +7,7 @@
     "dev:webpack": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "socket:dev": "node scripts/driver-socket-server.mjs"
   },
   "dependencies": {

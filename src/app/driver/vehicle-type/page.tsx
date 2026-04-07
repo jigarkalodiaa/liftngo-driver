@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/layout/AuthGuard";
 import BottomCta from "@/components/layout/BottomCta";
@@ -51,8 +51,6 @@ function SelectedRing() {
 
 function VehicleTypeContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { category, setCategory } = useDriverVehicle();
 
   const [selected, setSelected] = useState<DriverVehicleCategory>(category ?? "walk");
@@ -64,8 +62,8 @@ function VehicleTypeContent() {
   const onContinue = useCallback(() => {
     setCategory(selected);
     mergeDriverOnboardingProfile({ vehicleCategory: selected });
-    routerRef.current.replace(DRIVER_ONBOARDING.vehicleDetails);
-  }, [selected, setCategory]);
+    router.replace(DRIVER_ONBOARDING.vehicleDetails);
+  }, [selected, setCategory, router]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-white">

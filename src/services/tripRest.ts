@@ -1,4 +1,4 @@
-import { getLiftngoApiBaseUrl } from "@/config/liftngoApi";
+import { getLiftngoApiBaseUrl, mergeLiftngoFetchHeaders } from "@/config/liftngoApi";
 
 export type TripRestError = {
   ok: false;
@@ -9,9 +9,9 @@ export type TripRestError = {
 export type TripRestOk = { ok: true };
 
 function authHeaders(token: string | null): HeadersInit {
-  const h: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) h.Authorization = `Bearer ${token}`;
-  return h;
+  const h = new Headers({ "Content-Type": "application/json" });
+  if (token) h.set("Authorization", `Bearer ${token}`);
+  return mergeLiftngoFetchHeaders(h);
 }
 
 export async function acceptTrip(tripId: string, token: string | null): Promise<TripRestOk | TripRestError> {

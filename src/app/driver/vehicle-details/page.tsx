@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDownIcon } from "@/components/icons";
@@ -47,8 +47,6 @@ const inputShell =
 
 function VehicleDetailsContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { category, details, setDetails, setOwnerInformation } = useDriverVehicle();
 
   const [errors, setErrors] = useState<Partial<Record<keyof VehicleDetailsFormData, string>>>({});
@@ -57,7 +55,7 @@ function VehicleDetailsContent() {
   const onContinue = useCallback(() => {
     if (!category) {
       toast.error("Select a vehicle type first.");
-      routerRef.current.replace(DRIVER_ONBOARDING.vehicleType);
+      router.replace(DRIVER_ONBOARDING.vehicleType);
       return;
     }
     const parsed = vehicleDetailsFormSchema.safeParse({
@@ -89,9 +87,9 @@ function VehicleDetailsContent() {
       const next = parsed.data.isOwner
         ? DRIVER_ONBOARDING.vehicleRc
         : DRIVER_ONBOARDING.vehicleOwner;
-      routerRef.current.replace(next);
+      router.replace(next);
     }, 600);
-  }, [category, details]);
+  }, [category, details, router]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-gray-50)]">

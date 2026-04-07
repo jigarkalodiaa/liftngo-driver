@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useLocale } from "@/context/LocaleContext";
@@ -14,8 +14,6 @@ type Step = "lang" | "phone" | "otp";
 
 export default function DriverLoginPage() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { setLocale, t } = useLocale();
 
   /**
@@ -50,16 +48,16 @@ export default function DriverLoginPage() {
   const onVerified = useCallback(
     (driverType: DriverType, driverVerified: boolean) => {
       if (driverType === "new") {
-        routerRef.current.replace(DRIVER_ONBOARDING.aadhaar);
+        router.replace(DRIVER_ONBOARDING.aadhaar);
         return;
       }
       if (driverVerified) {
-        routerRef.current.replace(DRIVER_ONBOARDING.dashboard);
+        router.replace(DRIVER_ONBOARDING.dashboard);
         return;
       }
-      routerRef.current.replace(DRIVER_ONBOARDING.applicationReview);
+      router.replace(DRIVER_ONBOARDING.applicationReview);
     },
-    [],
+    [router],
   );
 
   return (

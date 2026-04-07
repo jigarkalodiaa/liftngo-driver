@@ -50,7 +50,6 @@ export const useDriverSuspensionStore = create<SuspensionStore>()(
           return { tier: "none" as const, strikes: get().missStrikes, applied: false };
         }
         const strikes = get().missStrikes + 1;
-        const now = Date.now();
         let tier: SuspensionTier = "none";
         let suspendedUntilMs: number | null = null;
         let permanent = false;

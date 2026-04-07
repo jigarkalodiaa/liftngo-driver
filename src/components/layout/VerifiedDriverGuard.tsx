@@ -12,8 +12,6 @@ import { DRIVER_ONBOARDING } from "@/lib/driver/onboardingRoutes";
  */
 export default function VerifiedDriverGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const [ready, setReady] = useState(false);
   const redirectedRef = useRef(false);
 
@@ -22,11 +20,11 @@ export default function VerifiedDriverGuard({ children }: { children: React.Reac
     const token = localStorage.getItem(DRIVER_AUTH_TOKEN_KEY);
     if (!isDriverSessionVerified(token)) {
       redirectedRef.current = true;
-      routerRef.current.replace(DRIVER_ONBOARDING.applicationReview);
+      router.replace(DRIVER_ONBOARDING.applicationReview);
       return;
     }
     setReady(true);
-  }, []);
+  }, [router]);
 
   if (!ready) {
     return (

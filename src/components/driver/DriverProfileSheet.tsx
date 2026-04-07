@@ -102,15 +102,15 @@ export default function DriverProfileSheet({ open, onClose }: DriverProfileSheet
   const merged = useMemo(() => {
     const stored = loadDriverOnboardingProfile();
     return mergeWithVehicleContext(stored, category, details, ownerInformation);
-  }, [open, category, details, ownerInformation]);
+  }, [category, details, ownerInformation]);
 
   const partnerTagging = useMemo(() => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined" || !open) return null;
     return getDriverTaggingFromToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY));
   }, [open]);
 
   const sessionVerified = useMemo(() => {
-    if (typeof window === "undefined") return false;
+    if (typeof window === "undefined" || !open) return false;
     return isDriverSessionVerified(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY));
   }, [open]);
 

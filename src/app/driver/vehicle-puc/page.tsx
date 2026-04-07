@@ -34,8 +34,6 @@ const MOCK_EXPIRY = "10/10/2024";
 
 function VehiclePucContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { details } = useDriverVehicle();
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -57,11 +55,13 @@ function VehiclePucContent() {
     if (redirectedRef.current) return;
     if (isElectricVehicleType(details.vehicleTypeDetail)) {
       redirectedRef.current = true;
-      routerRef.current.replace(DRIVER_ONBOARDING.vehiclePhotos);
+      router.replace(DRIVER_ONBOARDING.vehiclePhotos);
     }
-  }, [details.vehicleTypeDetail]);
+  }, [details.vehicleTypeDetail, router]);
 
-  const clearError = (k: keyof typeof errors) => setErrors((p) => ({ ...p, [k]: undefined }));
+  const clearError = useCallback((k: keyof typeof errors) => {
+    setErrors((p) => ({ ...p, [k]: undefined }));
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -84,7 +84,7 @@ function VehiclePucContent() {
     setPucNumber("");
     setExpiryDate("");
     clearError("file");
-  }, []);
+  }, [clearError]);
 
   useEffect(() => {
     if (!file) {
@@ -150,9 +150,9 @@ function VehiclePucContent() {
     window.setTimeout(() => {
       toast.success("PUC document saved.");
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.vehiclePhotos);
+      router.replace(DRIVER_ONBOARDING.vehiclePhotos);
     }, 600);
-  }, [file, pucNumber, expiryDate, ocrDone, verifying]);
+  }, [file, pucNumber, expiryDate, ocrDone, verifying, router]);
 
   const inputRow =
     "flex w-full items-center gap-2 rounded-[var(--radius-standard)] border border-solid border-[var(--color-gray-300)] bg-white px-3 py-2.5 focus-within:border-[var(--color-primary)]";

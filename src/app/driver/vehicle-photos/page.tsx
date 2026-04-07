@@ -27,8 +27,6 @@ function InfoNoteIcon({ className }: { className?: string }) {
 
 function VehiclePhotosContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -78,9 +76,9 @@ function VehiclePhotosContent() {
     window.setTimeout(() => {
       toast.success("Vehicle photo saved.");
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.bankDetails);
+      router.replace(DRIVER_ONBOARDING.bankDetails);
     }, 500);
-  }, [file]);
+  }, [file, router]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-gray-50)]">

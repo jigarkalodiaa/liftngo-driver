@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -30,8 +30,6 @@ const VERIFY_MS = 1600;
 
 function VehicleRcContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { details } = useDriverVehicle();
 
   const [frontUpload, setFrontUpload] = useState<UploadState>(null);
@@ -96,9 +94,9 @@ function VehicleRcContent() {
     window.setTimeout(() => {
       toast.success("RC uploaded successfully.");
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.vehicleInsurance);
+      router.replace(DRIVER_ONBOARDING.vehicleInsurance);
     }, 800);
-  }, [frontUpload, backUpload, vehicleNumber, ownerName, ocrDone, verifying]);
+  }, [frontUpload, backUpload, vehicleNumber, ownerName, ocrDone, verifying, router]);
 
   const inputRow =
     "flex w-full items-center gap-2 rounded-[var(--radius-standard)] border border-solid border-[var(--color-gray-300)] bg-white px-3 py-2.5 focus-within:border-[var(--color-primary)]";

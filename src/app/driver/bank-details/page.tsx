@@ -26,8 +26,6 @@ const fieldClass =
 
 function BankDetailsContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +46,7 @@ function BankDetailsContent() {
     };
   }, [previewUrl]);
 
-  const clearFieldError = (k: keyof typeof errors) => setErrors((p) => ({ ...p, [k]: undefined }));
+  const clearFieldError = useCallback((k: keyof typeof errors) => setErrors((p) => ({ ...p, [k]: undefined })), []);
 
   const applyFile = useCallback((f: File) => {
     if (f.size > MAX_BYTES) {
@@ -61,7 +59,7 @@ function BankDetailsContent() {
     });
     setFile(f);
     clearFieldError("proof");
-  }, []);
+  }, [clearFieldError]);
 
   const removeFile = useCallback(() => {
     setPreviewUrl((prev) => {
@@ -112,9 +110,9 @@ function BankDetailsContent() {
       });
       toast.success("Bank details submitted.");
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.applicationReview);
+      router.replace(DRIVER_ONBOARDING.applicationReview);
     }, 600);
-  }, [file, accountHolderName, accountNumber, ifscCode]);
+  }, [file, accountHolderName, accountNumber, ifscCode, router]);
 
   const isImage = file?.type.startsWith("image/");
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FieldVerifiedIcon, SparklesIcon } from "@/components/icons";
@@ -23,8 +23,6 @@ type UploadState = { file: File; preview: string } | null;
 
 function DrivingLicenseForm() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
 
   const [frontUpload, setFrontUpload] = useState<UploadState>(null);
   const [backUpload, setBackUpload] = useState<UploadState>(null);
@@ -91,9 +89,9 @@ function DrivingLicenseForm() {
     window.setTimeout(() => {
       toast.success("Driving license saved.");
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.selfie);
+      router.replace(DRIVER_ONBOARDING.selfie);
     }, 600);
-  }, [frontUpload, backUpload, dlNumber, expiryDate]);
+  }, [frontUpload, backUpload, dlNumber, expiryDate, router]);
 
   const inputRow =
     "flex w-full items-center gap-2 rounded-[var(--radius-standard)] border border-solid border-[var(--color-gray-300)] bg-white px-3 py-2.5 focus-within:border-[var(--color-primary)]";

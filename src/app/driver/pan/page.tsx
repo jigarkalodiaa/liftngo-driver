@@ -27,8 +27,6 @@ const VERIFY_MS = 2200;
 function PanVerificationForm() {
   const { t } = useLocale();
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
 
   const panFormSchema = useMemo(() => createPanFormSchema(t), [t]);
   const panNumberSchema = useMemo(() => createPanNumberSchema(t), [t]);
@@ -110,9 +108,9 @@ function PanVerificationForm() {
       });
       toast.success(t("pan.success"));
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.drivingLicense);
+      router.replace(DRIVER_ONBOARDING.drivingLicense);
     }, 800);
-  }, [panNumber, nameOnCard, fileName, t, panFormSchema]);
+  }, [panNumber, nameOnCard, fileName, t, panFormSchema, router]);
 
   const inputRow =
     "flex w-full items-center gap-2 rounded-[var(--radius-standard)] border border-solid border-[var(--color-gray-300)] bg-white px-3 py-2.5 focus-within:border-[var(--color-primary)]";

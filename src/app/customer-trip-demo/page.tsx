@@ -6,7 +6,7 @@ import { useCustomerSocket } from "@/hooks/useCustomerSocket";
 import { useSocket } from "@/hooks/useSocket";
 
 /**
- * Demo: set customer id below. Backend: `NEXT_PUBLIC_SOCKET_URL` (default `http://localhost:3001`).
+ * Demo: set customer id below. Backend: `NEXT_PUBLIC_NGROK_BACKEND_URL` or `NEXT_PUBLIC_SOCKET_URL` / `NEXT_PUBLIC_LIFTNGO_API_URL`.
  */
 export default function CustomerTripDemoPage() {
   const [inputId, setInputId] = useState("cust_demo_1");

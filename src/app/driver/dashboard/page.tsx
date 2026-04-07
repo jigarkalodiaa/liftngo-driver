@@ -92,8 +92,6 @@ function UserAvatarIcon({ className }: { className?: string }) {
 function DashboardContent() {
   const { t } = useLocale();
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { clearSelfie } = useDriverSelfie();
   const { clearVehicle } = useDriverVehicle();
 
@@ -235,7 +233,7 @@ function DashboardContent() {
     void notificationBadgeTick;
     const read = loadReadNotificationIds();
     return DRIVER_NOTIFICATION_IDS.filter((id) => !read.has(id)).length;
-  }, [notificationBadgeTick, notificationsOpen]);
+  }, [notificationBadgeTick]);
 
   const handleSignOut = useCallback(() => {
     clearSelfie();
@@ -256,8 +254,8 @@ function DashboardContent() {
     disconnectDriverSocket();
     useDriverDispatchStore.getState().reset();
     setSideMenuOpen(false);
-    routerRef.current.replace("/driver/login");
-  }, [clearSelfie, clearVehicle]);
+    router.replace("/driver/login");
+  }, [clearSelfie, clearVehicle, router]);
 
   const handleMenuSelect = useCallback(
     (action: SideMenuAction) => {
@@ -270,13 +268,13 @@ function DashboardContent() {
           setWalletOpen(true);
           break;
         case "tripHistory":
-          routerRef.current.push("/driver/trip-history");
+          router.push("/driver/trip-history");
           break;
         case "help":
-          routerRef.current.push("/faq");
+          router.push("/faq");
           break;
         case "terms":
-          routerRef.current.push("/driver/terms");
+          router.push("/driver/terms");
           break;
         case "support":
           setSupportOpen(true);
@@ -286,7 +284,7 @@ function DashboardContent() {
           break;
       }
     },
-    [handleSignOut],
+    [handleSignOut, router],
   );
 
   const onGoOnline = useCallback(() => {
@@ -454,8 +452,8 @@ function DashboardContent() {
               <DriverPartnerTierStrip hidden={false} />
               <DashboardWalletSummary
                 onOpenWallet={openWallet}
-                onOpenPartnerTier={() => routerRef.current.push("/driver/partner-tier")}
-                onOpenTripHistory={() => routerRef.current.push("/driver/trip-history")}
+                onOpenPartnerTier={() => router.push("/driver/partner-tier")}
+                onOpenTripHistory={() => router.push("/driver/trip-history")}
               />
               <DriverIncomingTripsPanel hidden={Boolean(activeTrip)} />
             </div>

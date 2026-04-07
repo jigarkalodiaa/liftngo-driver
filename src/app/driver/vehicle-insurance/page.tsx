@@ -34,8 +34,6 @@ const MOCK_EXPIRY = "22-Apr-2026";
 
 function VehicleInsuranceContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const { details } = useDriverVehicle();
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +50,9 @@ function VehicleInsuranceContent() {
   >({});
   const [submitting, setSubmitting] = useState(false);
 
-  const clearError = (k: keyof typeof errors) => setErrors((p) => ({ ...p, [k]: undefined }));
+  const clearError = useCallback((k: keyof typeof errors) => {
+    setErrors((p) => ({ ...p, [k]: undefined }));
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -75,7 +75,7 @@ function VehicleInsuranceContent() {
     setPolicyNumber("");
     setExpiryDate("");
     clearError("file");
-  }, []);
+  }, [clearError]);
 
   useEffect(() => {
     if (!file) {
@@ -144,9 +144,9 @@ function VehicleInsuranceContent() {
       const next = isElectricVehicleType(details.vehicleTypeDetail)
         ? DRIVER_ONBOARDING.vehiclePhotos
         : DRIVER_ONBOARDING.vehiclePuc;
-      routerRef.current.replace(next);
+      router.replace(next);
     }, 600);
-  }, [file, policyNumber, expiryDate, ocrDone, verifying, details.vehicleTypeDetail]);
+  }, [file, policyNumber, expiryDate, ocrDone, verifying, details.vehicleTypeDetail, router]);
 
   const inputRow =
     "flex w-full items-center gap-2 rounded-[var(--radius-standard)] border border-solid border-[var(--color-gray-300)] bg-white px-3 py-2.5 focus-within:border-[var(--color-primary)]";

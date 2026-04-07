@@ -16,8 +16,6 @@ type Phase = "opening" | "live" | "review" | "error";
 
 function SelfieVerificationContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
 
   const { selfie, setSelfie, clearSelfie } = useDriverSelfie();
 
@@ -163,8 +161,8 @@ function SelfieVerificationContent() {
   }, [clearSelfie]);
 
   const handleContinue = useCallback(() => {
-    routerRef.current.replace(DRIVER_ONBOARDING.vehicleType);
-  }, []);
+    router.replace(DRIVER_ONBOARDING.vehicleType);
+  }, [router]);
 
   const handleRetryError = useCallback(() => {
     setPhase("opening");

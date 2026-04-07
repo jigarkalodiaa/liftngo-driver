@@ -13,6 +13,5 @@ export function dispatchSocketLog(
 ): void {
   if (!isDispatchSocketDebug()) return;
   const ts = new Date().toISOString();
-  // eslint-disable-next-line no-console -- intentional debug
   console.debug(`[liftngo:${channel}] ${ts} ${event}`, payload ?? "");
 }

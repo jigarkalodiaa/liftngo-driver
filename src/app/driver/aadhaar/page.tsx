@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -20,8 +20,6 @@ type UploadState = { file: File; preview: string } | null;
 function AadhaarForm() {
   const { t } = useLocale();
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
 
   const aadhaarFormSchema = useMemo(() => createAadhaarFormSchema(t), [t]);
 
@@ -76,9 +74,9 @@ function AadhaarForm() {
       });
       toast.success(t("aadhaar.success"));
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.pan);
+      router.replace(DRIVER_ONBOARDING.pan);
     }, 1500);
-  }, [name, phone, aadhaarNumber, address, region, consent, frontUpload, backUpload, t, aadhaarFormSchema]);
+  }, [name, phone, aadhaarNumber, address, region, consent, frontUpload, backUpload, t, aadhaarFormSchema, router]);
 
   const inputBox =
     "w-full rounded-[var(--radius-standard)] border border-solid border-[var(--color-gray-300)] bg-white px-4 py-3 text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-gray-400)] focus:border-[var(--color-primary)]";

@@ -1,10 +1,9 @@
 import { io, type Socket } from "socket.io-client";
+import { getLiftngoSocketUrl } from "@/config/liftngoBackend";
 import { clearAllDriverOfferTimers } from "@/lib/dispatch/offerTimers";
 import { dispatchSocketLog } from "@/lib/dispatch/socketDebug";
 import { useLiftngoSocketRuntimeStore } from "@/stores/liftngoSocketRuntimeStore";
 import type { JoinTripEmitPayload, LiftngoSocketRole } from "@/types/liftngoSocket";
-
-const DEFAULT_WS = "http://localhost:3001";
 
 /** Canonical event names from LiftNGo backend. */
 export const LIFTNGO_SOCKET_EVENTS = {
@@ -20,8 +19,7 @@ export const LIFTNGO_SOCKET_EVENTS = {
 } as const;
 
 export function getSocketUrl(): string {
-  if (typeof window === "undefined") return DEFAULT_WS;
-  return process.env.NEXT_PUBLIC_SOCKET_URL?.trim() || DEFAULT_WS;
+  return getLiftngoSocketUrl();
 }
 
 let socket: Socket | null = null;

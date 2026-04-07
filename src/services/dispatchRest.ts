@@ -1,4 +1,4 @@
-import { getLiftngoApiBaseUrl } from "@/config/liftngoApi";
+import { getLiftngoApiBaseUrl, mergeLiftngoFetchHeaders } from "@/config/liftngoApi";
 import { getCustomerCurrentTripPath, getDriverActiveTripPath } from "@/config/dispatchPaths";
 import type { DispatchTrip } from "@/types/dispatch";
 import { normalizeStatusToMachine } from "@/lib/dispatch/tripStateMachine";
@@ -7,9 +7,9 @@ export type DispatchRestError = { ok: false; status: number; message: string };
 export type DispatchRestOk<T> = { ok: true; data: T };
 
 function authHeaders(token: string | null): HeadersInit {
-  const h: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) h.Authorization = `Bearer ${token}`;
-  return h;
+  const h = new Headers({ "Content-Type": "application/json" });
+  if (token) h.set("Authorization", `Bearer ${token}`);
+  return mergeLiftngoFetchHeaders(h);
 }
 
 const base = () => getLiftngoApiBaseUrl().replace(/\/$/, "");

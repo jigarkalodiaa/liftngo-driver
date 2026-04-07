@@ -1,6 +1,6 @@
 import type { DriverLocale } from "@/lib/i18n/constants";
 
-/* eslint-disable @typescript-eslint/no-explicit-any — nested tree */
+/* eslint-disable @typescript-eslint/no-explicit-any -- nested message tree */
 const en: Record<string, any> = {
   lang: {
     chooseTitle: "Choose your language",

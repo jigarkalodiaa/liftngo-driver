@@ -55,6 +55,8 @@ type AcceptSliderProps = {
 function AcceptSlider({ disabled, acceptLabel, onAccept }: AcceptSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
+  /** Synced from layout/resize/pointer for a11y (no ref reads during render). */
+  const [maxOffset, setMaxOffset] = useState(0);
   const maxOffsetRef = useRef(0);
   const drag = useRef({ active: false, startClient: 0, startOffset: 0 });
   const acceptedRef = useRef(false);
@@ -62,7 +64,9 @@ function AcceptSlider({ disabled, acceptLabel, onAccept }: AcceptSliderProps) {
   const updateMax = useCallback(() => {
     const t = trackRef.current;
     if (!t) return;
-    maxOffsetRef.current = Math.max(0, t.clientWidth - HANDLE_PX - TRACK_PAD_PX * 2);
+    const m = Math.max(0, t.clientWidth - HANDLE_PX - TRACK_PAD_PX * 2);
+    maxOffsetRef.current = m;
+    setMaxOffset(m);
   }, []);
 
   useLayoutEffect(() => {
@@ -124,9 +128,7 @@ function AcceptSlider({ disabled, acceptLabel, onAccept }: AcceptSliderProps) {
         role="slider"
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={Math.round(
-          maxOffsetRef.current > 0 ? (offset / maxOffsetRef.current) * 100 : 0,
-        )}
+        aria-valuenow={Math.round(maxOffset > 0 ? (offset / maxOffset) * 100 : 0)}
         aria-label={acceptLabel}
         className="absolute top-1/2 z-[1] flex size-[52px] cursor-grab touch-none items-center justify-center rounded-lg bg-[#3d3e6e] active:cursor-grabbing"
         style={{
@@ -161,7 +163,10 @@ export default function NewOrderRequestSheet({
   const { t } = useLocale();
   const [remainingMs, setRemainingMs] = useState(ORDER_REQUEST_TIMEOUT_SEC * 1000);
   const expireRef = useRef(onExpire);
-  expireRef.current = onExpire;
+
+  useEffect(() => {
+    expireRef.current = onExpire;
+  }, [onExpire]);
 
   useEffect(() => {
     let didExpire = false;

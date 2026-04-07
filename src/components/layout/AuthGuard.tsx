@@ -6,9 +6,6 @@ import { DRIVER_AUTH_TOKEN_KEY } from "@/lib/driver/authConstants";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
-
   const [ready, setReady] = useState(false);
   const redirectedRef = useRef(false);
 
@@ -16,11 +13,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (redirectedRef.current) return;
     if (!localStorage.getItem(DRIVER_AUTH_TOKEN_KEY)) {
       redirectedRef.current = true;
-      routerRef.current.replace("/driver/login");
+      router.replace("/driver/login");
       return;
     }
     setReady(true);
-  }, []);
+  }, [router]);
 
   if (!ready) {
     return (

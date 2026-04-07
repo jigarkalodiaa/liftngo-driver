@@ -38,8 +38,6 @@ const dashedPairBtn =
 
 function VehicleOwnerContent() {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
 
   const { category, details, ownerInformation, setOwnerInformation } = useDriverVehicle();
 
@@ -57,13 +55,13 @@ function VehicleOwnerContent() {
 
   useEffect(() => {
     if (!category) {
-      routerRef.current.replace(DRIVER_ONBOARDING.vehicleType);
+      router.replace(DRIVER_ONBOARDING.vehicleType);
       return;
     }
     if (details.isOwner) {
-      routerRef.current.replace(DRIVER_ONBOARDING.vehicleDetails);
+      router.replace(DRIVER_ONBOARDING.vehicleDetails);
     }
-  }, [category, details.isOwner]);
+  }, [category, details.isOwner, router]);
 
   useEffect(() => {
     return () => {
@@ -104,7 +102,9 @@ function VehicleOwnerContent() {
     });
   }, [ownerInformation.consentFile]);
 
-  const clearErr = (k: keyof typeof errors) => setErrors((p) => ({ ...p, [k]: undefined }));
+  const clearErr = useCallback((k: keyof typeof errors) => {
+    setErrors((p) => ({ ...p, [k]: undefined }));
+  }, []);
 
   const applyAadhaar = useCallback(
     (file: File) => {
@@ -119,7 +119,7 @@ function VehicleOwnerContent() {
       setOwnerInformation({ aadhaarFile: file });
       clearErr("aadhaar");
     },
-    [setOwnerInformation],
+    [setOwnerInformation, clearErr],
   );
 
   const applyConsent = useCallback(
@@ -189,9 +189,9 @@ function VehicleOwnerContent() {
       });
       toast.success("Owner information saved.");
       setSubmitting(false);
-      routerRef.current.replace(DRIVER_ONBOARDING.vehicleRc);
+      router.replace(DRIVER_ONBOARDING.vehicleRc);
     }, 600);
-  }, [ownerInformation]);
+  }, [ownerInformation, router]);
 
   const consentIsPdf = ownerInformation.consentFile?.type === "application/pdf";
 
