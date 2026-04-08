@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use `@/lib/api/apiPaths` instead. This file is kept for backward compatibility.
+ */
+
 /** PATCH body: `{ isOnline: boolean }`. Override if your API path differs. */
 export function getDriverOnlinePatchPath(): string {
   return process.env.NEXT_PUBLIC_DISPATCH_DRIVER_ONLINE_PATH?.trim() || "/drivers/online";

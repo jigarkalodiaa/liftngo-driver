@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use `@/services/api/authApi` instead. This file is kept for backward compatibility.
+ */
+
 export type ApiErrorBody = {
   error: string;
   code?: string;

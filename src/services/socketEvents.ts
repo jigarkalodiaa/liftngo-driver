@@ -10,7 +10,7 @@ import {
 import {
   fetchCustomerCurrentTrip,
   fetchDriverActiveTrip,
-} from "@/services/dispatchRest";
+} from "@/services/api";
 import { useCustomerDispatchStore } from "@/stores/customerDispatchStore";
 import { useDriverDispatchStore } from "@/stores/driverDispatchStore";
 import type { DispatchTrip, LiftngoSocketRole, SocketEventMap } from "@/types/dispatch";

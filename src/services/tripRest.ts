@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use `@/services/api` instead. This file is kept for backward compatibility.
+ */
+
 import axios from "axios";
 
 export type TripRestError = {

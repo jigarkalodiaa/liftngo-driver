@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
@@ -99,12 +100,18 @@ function DashboardContent() {
 
   const activeTrip = useDriverTripStore((s) => s.activeTrip);
   const appMode = useDriverAppMode();
-  const isReceivingTrips = useDriverAvailabilityStore((s) => s.isReceivingTrips);
-  const setReceivingTrips = useDriverAvailabilityStore((s) => s.setReceivingTrips);
-  const suspensionPermanent = useDriverSuspensionStore((s) => s.permanent);
-  const suspensionUntilMs = useDriverSuspensionStore((s) => s.suspendedUntilMs);
-  const fetchPerformance = useDriverPerformanceStore((s) => s.fetchPerformance);
-  const serverSnapshot = useDriverPerformanceStore((s) => s.serverSnapshot);
+
+  const { isReceivingTrips, setReceivingTrips } = useDriverAvailabilityStore(
+    useShallow((s) => ({ isReceivingTrips: s.isReceivingTrips, setReceivingTrips: s.setReceivingTrips }))
+  );
+
+  const { suspensionPermanent, suspensionUntilMs } = useDriverSuspensionStore(
+    useShallow((s) => ({ suspensionPermanent: s.permanent, suspensionUntilMs: s.suspendedUntilMs }))
+  );
+
+  const { fetchPerformance, serverSnapshot } = useDriverPerformanceStore(
+    useShallow((s) => ({ fetchPerformance: s.fetchPerformance, serverSnapshot: s.serverSnapshot }))
+  );
   const [breakdownClock, setBreakdownClock] = useState(0);
 
   const isSuspended = useMemo(

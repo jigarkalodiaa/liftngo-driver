@@ -1,5 +1,5 @@
 import { getLiftngoBearerToken } from "@/lib/api/bearerToken";
-import { patchDriverLocation } from "@/services/dispatchRest";
+import { patchDriverLocation } from "@/services/api";
 
 const DEFAULT_MS = 2000;
 

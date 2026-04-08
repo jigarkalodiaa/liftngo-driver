@@ -8,7 +8,7 @@ import BottomCta from "@/components/layout/BottomCta";
 import { useLocale } from "@/context/LocaleContext";
 import { DRIVER_AUTH_TOKEN_KEY, DRIVER_LOGIN_PHONE_SESSION_KEY } from "@/lib/driver/authConstants";
 import { DRIVER_ONBOARDING } from "@/lib/driver/onboardingRoutes";
-import { resendOtp } from "@/lib/driver/loginApi";
+import { resendOtp } from "@/services/api";
 import { toast } from "sonner";
 
 const OTP_LEN = 4;
@@ -140,22 +140,23 @@ export default function OtpInput({ phone, onEditPhone }: OtpInputProps) {
   const handleResend = async () => {
     if (secondsLeft > 0) return;
     setResendLoading(true);
-    try {
-      await resendOtp(phone);
+
+    const result = await resendOtp(phone);
+
+    if (result.ok) {
       toast.success(t("login.newOtpSent"));
       setDigits(Array(OTP_LEN).fill(""));
       setFieldError(null);
       setSecondsLeft(RESEND_SEC);
       setActive(0);
       requestAnimationFrame(() => inputsRef.current[0]?.focus());
-    } catch (err) {
-      const e = err as Error & { code?: string };
+    } else {
       toast.error(
-        e.code === "RATE_LIMIT" ? t("login.rateLimitResend") : e.message || t("login.resendFail"),
+        result.code === "RATE_LIMIT" ? t("login.rateLimitResend") : result.message || t("login.resendFail"),
       );
-    } finally {
-      setResendLoading(false);
     }
+
+    setResendLoading(false);
   };
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { getSocket } from "@/services/socket";
 import {
   attachCustomerDispatchEngine,
@@ -22,8 +23,13 @@ export type UseCustomerSocketOptions = {
  */
 export function useCustomerSocket(options: UseCustomerSocketOptions) {
   const { enabled, authToken } = options;
-  const isSearching = useCustomerDispatchStore((s) => s.isSearching);
-  const driverLocation = useCustomerDispatchStore((s) => s.driverLocation);
+
+  const { isSearching, driverLocation } = useCustomerDispatchStore(
+    useShallow((s) => ({
+      isSearching: s.isSearching,
+      driverLocation: s.driverLocation,
+    }))
+  );
 
   useEffect(() => {
     if (!enabled) return;

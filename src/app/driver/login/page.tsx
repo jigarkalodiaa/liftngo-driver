@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useLocale } from "@/context/LocaleContext";
-import { sendOtp } from "@/lib/driver/loginApi";
+import { sendOtp } from "@/services/api";
 import LanguageSelectStep, { LanguageSelectHeader } from "./LanguageSelectStep";
 import MobileInput from "./MobileInput";
 import OtpInput from "./OtpInput";
@@ -26,18 +26,19 @@ export default function DriverLoginPage() {
     if (phone.length !== 10) return;
     setLoading(true);
     setFieldError(null);
-    try {
-      await sendOtp(phone);
+
+    const result = await sendOtp(phone);
+
+    if (result.ok) {
       toast.success(t("login.otpSent"));
       setStep("otp");
-    } catch (e) {
-      const err = e as Error & { code?: string };
-      const msg = err.message || t("login.somethingWrong");
+    } else {
+      const msg = result.message || t("login.somethingWrong");
       setFieldError(msg);
-      toast.error(err.code === "RATE_LIMIT" ? t("login.rateLimitSend") : msg);
-    } finally {
-      setLoading(false);
+      toast.error(result.code === "RATE_LIMIT" ? t("login.rateLimitSend") : msg);
     }
+
+    setLoading(false);
   }, [phone, t]);
 
   const onEditPhone = useCallback(() => setStep("phone"), []);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { connectDriverSocket, disconnectDriverSocket } from "@/lib/socket/driverSocketClient";
 import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 import { useLiftngoSocketRuntimeStore } from "@/stores/liftngoSocketRuntimeStore";
@@ -17,10 +18,15 @@ export type UseSocketOptions = {
  */
 export function useSocket(userId: string | null, role: LiftngoSocketRole, options?: UseSocketOptions) {
   const enabled = options?.enabled !== false;
-  const connected = useLiftngoSocketRuntimeStore((s) => s.connected);
-  const reconnecting = useLiftngoSocketRuntimeStore((s) => s.reconnecting);
-  const lastError = useLiftngoSocketRuntimeStore((s) => s.lastError);
-  const lastDisconnectReason = useLiftngoSocketRuntimeStore((s) => s.lastDisconnectReason);
+
+  const { connected, reconnecting, lastError, lastDisconnectReason } = useLiftngoSocketRuntimeStore(
+    useShallow((s) => ({
+      connected: s.connected,
+      reconnecting: s.reconnecting,
+      lastError: s.lastError,
+      lastDisconnectReason: s.lastDisconnectReason,
+    }))
+  );
 
   useEffect(() => {
     if (!enabled || !userId) {

@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use `@/services/api` instead. This file is kept for backward compatibility.
+ * All new code should import from `@/services/api`.
+ */
+
 import axios from "axios";
 import {
   getCustomerCurrentTripPath,

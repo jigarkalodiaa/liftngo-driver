@@ -4,7 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { driverDispatchAcceptTrip } from "@/services/dispatchActions";
 
 /**
- * React Query mutation wrapping accept flow (store locks + REST via `acceptTrip` service + axios auth).
+ * Mutation hook for accepting a dispatch trip.
+ * Handles store locks + REST call with optimistic updates and rollback.
  */
 export function useAcceptDispatchTripMutation() {
   return useMutation({

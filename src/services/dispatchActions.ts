@@ -1,5 +1,5 @@
 import { broadcastAcceptLock, broadcastAcceptRelease } from "@/lib/dispatch/tabLeader";
-import { acceptTrip, rejectTrip } from "@/services/tripRest";
+import { acceptTrip, rejectTrip } from "@/services/api";
 import { useDriverDispatchStore } from "@/stores/driverDispatchStore";
 import type { DispatchTrip } from "@/types/dispatch";
 

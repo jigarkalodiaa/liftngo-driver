@@ -2,7 +2,7 @@ import { DRIVER_AUTH_TOKEN_KEY } from "@/lib/driver/authConstants";
 import { getDriverTaggingFromToken } from "@/lib/driver/authToken";
 import { isWalletBelowMinimum } from "@/lib/driver/walletConstants";
 import { emitDriverAvailability } from "@/lib/socket/driverSocketClient";
-import { patchDriverOnline } from "@/services/dispatchRest";
+import { patchDriverOnline } from "@/services/api";
 import { useDriverAvailabilityStore } from "@/stores/driverAvailabilityStore";
 import { useDriverPerformanceStore } from "@/stores/driverPerformanceStore";
 import { useDriverSuspensionStore } from "@/stores/driverSuspensionStore";

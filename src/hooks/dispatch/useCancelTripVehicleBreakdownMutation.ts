@@ -1,10 +1,14 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { cancelTripVehicleBreakdown } from "@/services/tripCancelApi";
+import { cancelTripWithReason } from "@/services/api";
 
+/**
+ * Mutation hook for cancelling a trip due to vehicle breakdown.
+ * Uses centralized API service with consistent error handling.
+ */
 export function useCancelTripVehicleBreakdownMutation() {
   return useMutation({
-    mutationFn: (tripId: string) => cancelTripVehicleBreakdown(tripId),
+    mutationFn: (tripId: string) => cancelTripWithReason(tripId, "VEHICLE_BREAKDOWN"),
   });
 }

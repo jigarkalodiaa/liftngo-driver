@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useShallow } from "zustand/shallow";
+import { useShallow } from "zustand/react/shallow";
 import { useAcceptDispatchTripMutation, useRejectDispatchTripMutation } from "@/hooks/dispatch";
 import { useDriverDispatchStore } from "@/stores/driverDispatchStore";
 import { useLiftngoSocketRuntimeStore } from "@/stores/liftngoSocketRuntimeStore";
@@ -44,8 +44,9 @@ function OfferRow({
   acceptMutation: ReturnType<typeof useAcceptDispatchTripMutation>;
   rejectMutation: ReturnType<typeof useRejectDispatchTripMutation>;
 }) {
-  const locks = useDriverDispatchStore((s) => s.actionLocks);
-  const external = useDriverDispatchStore((s) => s.externalBusyTripIds);
+  const { locks, external } = useDriverDispatchStore(
+    useShallow((s) => ({ locks: s.actionLocks, external: s.externalBusyTripIds }))
+  );
   const leftMs = useOfferCountdownMs(trip.offerExpiresAt);
   const busyKind = locks.get(trip.tripId);
   const locked = Boolean(busyKind) || external.has(trip.tripId);
@@ -139,9 +140,14 @@ export default function DriverIncomingTripsPanel({ hidden }: Props) {
     ),
   );
   const activeTrip = useDriverDispatchStore((s) => s.activeTrip);
-  const connected = useLiftngoSocketRuntimeStore((s) => s.connected);
-  const reconnecting = useLiftngoSocketRuntimeStore((s) => s.reconnecting);
-  const lastError = useLiftngoSocketRuntimeStore((s) => s.lastError);
+
+  const { connected, reconnecting, lastError } = useLiftngoSocketRuntimeStore(
+    useShallow((s) => ({
+      connected: s.connected,
+      reconnecting: s.reconnecting,
+      lastError: s.lastError,
+    }))
+  );
 
   const showSkeleton = !connected && offers.length === 0;
 

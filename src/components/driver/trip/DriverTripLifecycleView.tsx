@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/driver/trip/ConfirmDialog";
@@ -110,12 +111,23 @@ function PrimaryActionBlock({
   onCollectCashModal,
   t,
 }: PrimaryBlockProps) {
-  const transitionTo = useDriverTripStore((s) => s.transitionTo);
-  const completePickupToOnTrip = useDriverTripStore((s) => s.completePickupToOnTrip);
-  const completeDropToPaymentGate = useDriverTripStore((s) => s.completeDropToPaymentGate);
-  const confirmUnloading = useDriverTripStore((s) => s.confirmUnloading);
-  const beginCashCollection = useDriverTripStore((s) => s.beginCashCollection);
-  const applyPaymentCompletion = useDriverTripStore((s) => s.applyPaymentCompletion);
+  const {
+    transitionTo,
+    completePickupToOnTrip,
+    completeDropToPaymentGate,
+    confirmUnloading,
+    beginCashCollection,
+    applyPaymentCompletion,
+  } = useDriverTripStore(
+    useShallow((s) => ({
+      transitionTo: s.transitionTo,
+      completePickupToOnTrip: s.completePickupToOnTrip,
+      completeDropToPaymentGate: s.completeDropToPaymentGate,
+      confirmUnloading: s.confirmUnloading,
+      beginCashCollection: s.beginCashCollection,
+      applyPaymentCompletion: s.applyPaymentCompletion,
+    }))
+  );
 
   const ctaClass =
     "flex min-h-[3.5rem] w-full items-center justify-center rounded-2xl bg-[var(--color-primary)] px-4 py-4 text-base font-bold text-white shadow-md hover:opacity-95 disabled:pointer-events-none disabled:opacity-40";
@@ -260,12 +272,23 @@ type DriverTripLifecycleViewProps = {
 
 export default function DriverTripLifecycleView({ connectivityPad = false }: DriverTripLifecycleViewProps) {
   const { t } = useLocale();
-  const trip = useDriverTripStore((s) => s.activeTrip);
-  const actionLoading = useDriverTripStore((s) => s.actionLoading);
-  const paymentMismatchAlert = useDriverTripStore((s) => s.paymentMismatchAlert);
-  const finalizeCashPayment = useDriverTripStore((s) => s.finalizeCashPayment);
-  const completeTrip = useDriverTripStore((s) => s.completeTrip);
-  const reset = useDriverTripStore((s) => s.reset);
+  const {
+    trip,
+    actionLoading,
+    paymentMismatchAlert,
+    finalizeCashPayment,
+    completeTrip,
+    reset,
+  } = useDriverTripStore(
+    useShallow((s) => ({
+      trip: s.activeTrip,
+      actionLoading: s.actionLoading,
+      paymentMismatchAlert: s.paymentMismatchAlert,
+      finalizeCashPayment: s.finalizeCashPayment,
+      completeTrip: s.completeTrip,
+      reset: s.reset,
+    }))
+  );
 
   const [completeOpen, setCompleteOpen] = useState(false);
   const [collectOpen, setCollectOpen] = useState(false);
