@@ -84,8 +84,14 @@ const en: Record<string, any> = {
     notifPayoutBody: "Earnings are sent to your registered bank account after verification. Contact support if details change.",
     menuHelp: "Help & FAQ",
     menuContact: "Contact support",
-    supportTitle: "Contact support",
-    supportIntro: "Reach our driver support team by phone or email.",
+    supportTitle: "Help & Support",
+    supportIntro: "Chat with Liftngo Assistant for quick answers. Call or email if you still need a person.",
+    supportTitleTrip: "Trip help",
+    supportIntroTrip:
+      "You're on an active trip. Pick a topic below or type a short question. Email us if you need a person — no helpline call from this screen.",
+    supportEscalation: "Still need a human?",
+    supportEscalationTrip: "Need a person?",
+    helpButtonAria: "Open help and support chat",
     supportCall: "Call helpline",
     supportEmail: "Email us",
     supportHours: "Mon–Sat · 8:00 am – 8:00 pm IST",
@@ -107,6 +113,17 @@ const en: Record<string, any> = {
     suspensionBannerPermanentDetail:
       "Your partner account is permanently blocked from receiving trips. Contact support if you believe this is a mistake.",
     suspensionBannerUntilDetail: "Trip offers are paused until {date}.",
+    breakdownBannerTitle: "Account suspended (vehicle breakdown)",
+    breakdownBannerDetail:
+      "You cancelled a trip for vehicle breakdown. Online access and trip offers are paused. You can go online in {countdown}.",
+    breakdownOnlineBlocked:
+      "You are temporarily suspended after a vehicle breakdown cancellation. Try again when the timer ends.",
+    walletMinimumBannerTitle: "Trip offers paused — wallet below minimum",
+    walletMinimumBannerDetail:
+      "Keep at least {min} in your wallet to receive trips. Add {shortfall} to unlock offers.",
+    walletMinimumOnlineBlocked: "Top up your wallet to at least the minimum balance before going online.",
+    walletMinimumAcceptBlocked: "Wallet is below the minimum. Top up before accepting trips.",
+    walletMinimumPaySuccess: "Wallet topped up by {amount}. You can go online when ready.",
     suspensionToastFirst:
       "Suspended for 2 days: missed trip while performance was below {threshold}%.",
     suspensionToastSecond: "Suspended for 7 days: repeated missed trips with low performance.",
@@ -244,6 +261,239 @@ const en: Record<string, any> = {
     drop: "Drop Location",
     accept: "ACCEPT >",
   },
+  chatbot: {
+    inputLabel: "Type your question",
+    inputPlaceholder: "Message…",
+    send: "Send",
+    welcomeV2:
+      "Hi 👋 I'm Liftngo Assistant.\n\nPick a common issue or a category. I'll walk you through fixes step by step. You can also type a short message when the box is open for it.",
+    popular: { notReceiving: "⚡ Not receiving trips" },
+    intentV2: {
+      trip: "Trip issues",
+      wallet: "Wallet & payouts",
+      performance: "Performance & tier",
+      cancellation: "Cancellations",
+      app: "App problems",
+      account: "Account & verification",
+      other: "Something else",
+    },
+    tripJourney: {
+      welcome:
+        "You're on a trip 👋\n\nWhat do you need help with? Pick a topic or type below.",
+      back: "← Trip help menu",
+      mapsNavSol:
+        "Use “Open in Google Maps” on the pickup or drop card for turn‑by‑turn directions. Keep one hand on the wheel and follow local traffic rules.\n\nThe line on the in‑app map is a guide — switch to Maps for navigation.",
+      cashPaySol:
+        "For cash trips: collect the full fare shown on this trip before you tap to complete. Count the money carefully.\n\nIf the customer disputes the amount, stay calm and refer to the fare shown in the app.",
+      paymentAppSol:
+        "For prepaid / non‑cash trips: payment is recorded in the app. Follow the steps — you usually confirm when prompted; you don't collect cash unless the trip says cash.\n\nIf the app doesn't move to the next step, check your connection and try again after a few seconds.",
+      stuckSol:
+        "Trip steps must be done in order (pickup → load → drive → drop → payment → complete). Only the bottom green button for the current step is active.\n\n• Close keyboard or overlays if a tap does nothing.\n• If you're stuck after payment, confirm cash first on cash trips.\n\nStill stuck? Try “Check network steps” below or open more trip troubleshooting.",
+      opt: {
+        mapsNav: "Maps & navigation",
+        cashPay: "Cash payment on this trip",
+        paymentApp: "Prepaid / app payment steps",
+        stuck: "Wrong step or button won't work",
+        breakdown: "Vehicle breakdown / cancel trip",
+        notReceiving: "I'm not getting new trip offers",
+        fullTripMenu: "All trip issue categories…",
+        allTopics: "Full assistant menu (wallet, app, account…)",
+      },
+    },
+    bool: { yes: "Yes", no: "No" },
+    net: { stable: "Stable / good", unstable: "Weak or keeps dropping" },
+    opt: {
+      backMenu: "Main menu",
+      backSection: "Back",
+      changeTopic: "Change topic (reset)",
+      tripsNavPickup: "Pickup / navigation",
+      tripsNoOffers: "I'm not getting trip offers",
+      tripsPayment: "Payment or fare issue",
+      tripsStuck: "Trip screen stuck / steps",
+      walletBalance: "Balance looks wrong",
+      walletTopUp: "How to add money",
+      walletSettlement: "When do I get paid?",
+      perfScores: "How scores work",
+      perfSuspension: "Suspension or breakdown",
+      cancelBreakdown: "Vehicle breakdown cancellation",
+      cancelOther: "Other cancellation questions",
+      appCrash: "App crashes / freezes",
+      appLocation: "Location / GPS",
+      appNetwork: "Internet / connection",
+    },
+    action: {
+      retryOnline: "I went online — check again",
+      stillBroken: "Still not working",
+      fixedRetry: "Fixed — run checks again",
+      tryAgain: "Try these steps again",
+      openWallet: "Open wallet / earnings area",
+      waitRetry: "I'll wait & retry",
+      newChat: "Start fresh",
+      refreshApp: "I refreshed / reopened the app",
+      checkNetwork: "Check network steps",
+      openTripMenu: "More trip issues",
+    },
+    link: { partnerTier: "Open partner score & tier" },
+    trip: {
+      root: "Trip issues — what best describes the problem?",
+      sub: {
+        notReceiving: "Not receiving trip offers",
+        disappeared: "Trip disappeared from my screen",
+        wrongAssigned: "Wrong trip / wrong details",
+        cannotAccept: "Can't accept a trip",
+        comboHint: "No trips AND low performance score",
+      },
+      nrt: {
+        qOnline: "On your dashboard, are you switched ON to receive trips (online)?",
+        qLocation: "Is location permission ON for Liftngo in this browser or app?",
+        qNetwork: "Is your internet connection stable right now?",
+        qSuspended: "Do you see a red banner about suspension or vehicle breakdown?",
+        qLowPerf: "Is your performance score below about {threshold} or have you missed several requests recently?",
+        solOffline:
+          "Most often, trip offers are off because the app thinks you're offline.\n\n1) Open the dashboard.\n2) Tap Go Online.\n3) Wait on the map screen for 1–2 minutes.\n\nIf a red suspension banner shows, that blocks offers until it clears.",
+        solLocation:
+          "Without location, dispatch can't match you reliably.\n\n• Browser: allow location when prompted, or enable it in site settings.\n• Phone app: Settings → Apps → Liftngo → Permissions → Location → Allow while using.\nThen return here and go online again.",
+        solNetwork:
+          "A weak or switching connection can pause live offers.\n\n• Turn off VPN if you use one.\n• Switch Wi‑Fi ↔ mobile data.\n• Move to slightly better signal, then stay on the dashboard online for a few minutes.",
+        solSuspended:
+          "A red notice means offers are paused on purpose — for example missed trips with low performance, or an 8‑hour pause after a vehicle‑breakdown cancellation.\n\nRead the banner text for the exact reason and time. Improving trips and score over time helps once the pause ends. Threshold we mention in tips: around {threshold}/100.",
+        solAllClear:
+          "You answered that you're online, location is on, network is fine, and there's no suspension banner.\n\nNext steps:\n• Stay on the dashboard for a few minutes.\n• Toggle offline → online once.\n• If you're on web, try one fresh browser tab after saving your login.\n\nDemand varies by area and time — quiet periods are normal.",
+      },
+      disp: {
+        sol: "If a trip vanished, it usually means it was reassigned, cancelled by the customer/system, or the session refreshed.\n\n1) Check Trip history from the menu.\n2) Fully close this tab/app and reopen.\n3) Confirm you're still online.",
+        afterRefresh: "If the trip is still missing but you believe it should be active, use “Still not working” so we keep a log with your answers.",
+      },
+      wrong: {
+        sol: "If pickup or cargo details look wrong after you accept:\n\n1) Don't start navigation until you confirm with dispatch/customer if needed.\n2) Use trip support channels if the job can't be done safely.\n3) Note the order ID from the trip header for any follow‑up.\n\nIf this keeps happening, tell us via “Still not working”.",
+      },
+      accept: {
+        sol: "Can't tap Accept?\n\n• Check the timer — offers expire quickly.\n• Refresh connection (see network steps).\n• Close overlays (keyboard, system dialogs).\n• If another driver accepted first, the offer disappears — that's normal.\n\nUse “Check network steps” or open more trip help below.",
+      },
+    },
+    combo: {
+      tripPerf: {
+        q: "Are you BOTH not getting trips AND seeing a low performance score or missed‑trip warnings?",
+        resolved:
+          "That combination usually means two things at once:\n\n1) Dispatch may deprioritise partners with low recent performance or missed requests.\n2) Technical blocks (offline, location, network, suspension) can also stop offers.\n\nWe've already guided you through online, location, network, and suspension checks in the “Not receiving trips” path — work through those first. Then focus on accepting trips on time and completing them to recover your score (Premium bar is around {threshold}/100 and low cancellations).",
+      },
+    },
+    wallet: {
+      rootV2: "Wallet — which case matches you?",
+      sub: {
+        low: "Balance looks too low",
+        rechargeFail: "Recharge / top‑up failed",
+        deducted: "Money deducted but wallet didn't update",
+        negative: "Negative balance / odd adjustment",
+        suspendedCombo: "I paid / recharged but I'm still suspended or blocked",
+      },
+      low: {
+        sol: "Wallet updates after trips settle — not always instant.\n\n• Refresh or reopen the app.\n• Check Trip history for completed trips.\n• Remember commission or platform fees reduce what you see versus full fare.\n\nIf a specific trip is missing from history, note its time and order ID.",
+      },
+      topup: {
+        hint: "If your product allows top‑up, you'll see it under Wallet in the menu. If there's no add‑money option, your payouts may be bank‑settled only — check your agreement or statements.\n\nAfter any payment, wait a few minutes and refresh. UPI/bank delays happen.",
+      },
+      re: {
+        q1: "What happened with the recharge?",
+        bankPending: "Money left my bank / UPI but wallet is empty",
+        appError: "App showed an error or payment cancelled",
+        pending:
+          "If the bank or UPI app shows success but wallet is empty:\n\n1) Wait 15–30 minutes (gateway delays).\n2) Screenshot the bank reference ID.\n3) Refresh wallet.\n\nIf it's still missing after a few hours, use “Still not working” — we log your path automatically.",
+        app: "If the payment UI errored:\n\n1) Check your UPI / card limit.\n2) Try once more on stable network.\n3) Don't double‑pay — wait for the first attempt to settle.\n\nPersistent errors? Use “Still not working”.",
+      },
+      ded: {
+        sol: "If a debit shows but wallet didn't increase:\n\n• Confirm you weren't paying a platform fee or adjustment.\n• Pull to refresh wallet.\n• Check notifications or email for a receipt.\n\nIf the amount and time don't match anything you recognise, use “Still not working” with approximate time.",
+      },
+      neg: {
+        sol: "Negative or surprise adjustments usually tie to chargebacks, corrections, or advance settlements.\n\nCheck trip history and any notices. Improving completed trips and avoiding missed requests helps long‑term eligibility.\n\nIf the math looks impossible, use “Still not working”.",
+      },
+      sus: {
+        combo: "Let's separate money vs account state:\n\n• Wallet credit can be delayed.\n• Suspension or breakdown pauses are separate — they block offers even if money is fine.\n\nPick below which to review first.",
+        checkBanner: "Check suspension / breakdown banner",
+        checkWallet: "Check wallet / missing credit",
+      },
+    },
+    perf: {
+      rootV2: "Performance & tier — what's the concern?",
+      sub: { low: "My score is low", drop: "Score dropped suddenly", missed: "Missed trips / confusion" },
+      low: {
+        sol: "Scores use a rolling window of your recent trips — completed trips help; missed requests and driver‑cancelled trips hurt.\n\nAim to go online only when you can accept quickly, complete trips cleanly, and avoid unnecessary cancellations.\n\nOpen “Partner score & tier” on the dashboard for your exact numbers. Rough guide for Premium discussions: around {threshold}/100 performance and low cancellation share.",
+      },
+      drop: {
+        sol: "Sudden drops usually follow missed requests, cancellations, or a batch of tough trips entering the window.\n\nThere's no instant fix — add several good completed trips and avoid new misses.\n\nWatch the dashboard banner — active suspensions override everything until they expire.",
+      },
+      missed: {
+        sol: "A “missed” trip means the offer timed out without accept — it counts against performance.\n\n• Keep notifications on and the app open when online.\n• Don't go online if you can't respond within the countdown.\n\nCombine this with the “Not receiving trips” checklist if offers themselves are flaky.",
+      },
+    },
+    cancel: {
+      rootV2: "Cancellations — pick your situation:",
+      sub: { mistake: "I cancelled by mistake", breakdown: "Vehicle breakdown", penalty: "Penalty / suspension worry" },
+      mistake: {
+        sol: "Driver cancellations for reasons other than approved breakdowns count against you.\n\nIf it was truly accidental, avoid repeating — support may review patterns, not one‑off taps.\n\nComplete the next trips cleanly to stabilise your record.",
+      },
+      break: {
+        sol: "Vehicle‑breakdown cancellation is the only driver‑initiated cancel path — and it applies an 8‑hour online pause so the system stays fair.\n\nUse it only when the vehicle cannot continue. After the timer, go online and resume normal trips.",
+      },
+      pen: {
+        sol: "Penalties usually combine score rules + suspension timers shown in red banners.\n\nRead the exact message — it states duration and reason.\n\nIf something contradicts what happened on the trip, use “Still not working” with order ID and time.",
+      },
+    },
+    app: {
+      rootV2: "App problems — choose one:",
+      sub: { crash: "Crashes / freezes", gps: "GPS / map wrong", network: "Connection / loading", login: "Login / OTP" },
+      crash: {
+        solV2:
+          "Quick recovery:\n\n1) Force‑close Liftngo completely.\n2) Update to latest version / clear site data on web.\n3) Restart the device if it still hangs.\n4) Free storage if the phone is nearly full.\n\nReopen, log in once, then go online again.",
+      },
+      gps: {
+        solV2:
+          "Maps wrong or blue dot missing?\n\n• Precise location ON.\n• Disable mock location / developer GPS spoofing.\n• Allow browser location each session on web.\nDuring an active trip, keep GPS on until you finish all steps.",
+      },
+      net: {
+        solV2:
+          "Spinners or “can't connect”?\n\n• Stable Wi‑Fi or 4G/5G.\n• Disable VPN temporarily.\n• The dashboard shows a banner when the live socket reconnects — wait for it to clear.\n\nIf only Liftngo fails, try another app tab or reinstall as a last step.",
+      },
+      login: {
+        sol: "Login issues:\n\n• Check mobile number + OTP carefully.\n• Wait for resend cooldown.\n• Try one different network.\n• If OTP never arrives, your carrier may block short codes — try Wi‑Fi calling or email recovery if we add it later.\n\nAfter 3–4 failures, pause 10 minutes to avoid rate limits.",
+      },
+    },
+    acct: {
+      root: "Account & verification:",
+      sub: { verify: "Verification pending / rejected", docs: "Documents / upload", phone: "Phone or profile change" },
+      verify: {
+        sol: "Verification timing depends on document quality and queue load.\n\n• Re‑read any rejection reason and re‑upload sharp images.\n• PAN / licence / vehicle shots should be readable edge‑to‑edge.\n\nIf status is stuck far longer than stated SLA, use “Still not working”.",
+      },
+      docs: {
+        sol: "Upload tips:\n\n• Good light, no glare.\n• PDF or photo under size limits.\n• Match the name on PAN/bank.\n\nIf upload spins forever, switch network and retry once.",
+      },
+      phone: {
+        sol: "Registered phone changes usually need support review to protect payouts.\n\nPrepare:\n• Old & new numbers\n• ID proof\n• Recent trip ID if locked out\n\nUse “Still not working” — describe the change you need. No phone callback from this chat — we'll use your logged details.",
+      },
+    },
+    other: {
+      rootV2: "Describe your issue in one or two short lines. We save it with your chat path so support can see context.\n\nIf buttons are on screen, they’re usually faster than typing.",
+    },
+    freeform: {
+      ackV2:
+        "Got it — we've stored your message with today's chat context.\n\nNext:\n• Re‑open Partner score / Wallet / Trip checks from the dashboard if relevant.\n• Use “Still not working” in any flow if nothing changes after you try the steps.\n\nMain menu starts a clean session.",
+    },
+    clarify: {
+      pickOption:
+        "I work best with the buttons for each step. Your typed note wasn't used for this screen.\n\nPlease tap an option below, or Main menu to re‑start.",
+    },
+    unresolved: {
+      soft: "We've tried the usual fixes. If it's still wrong, we'll keep a detailed log from this chat.\n\nNext step: send a short email from your registered ID with your phone number and what you already tried here — no need to repeat every step in the email.",
+      emailCta: "I've noted the email step — log this chat",
+      logged:
+        "Logged. Your recent choices and messages in this assistant are stored locally for reference when you email.\n\nSubject idea: “Driver app — self‑help completed”.\nInclude: phone, area, approximate time, and any order ID.\n\nYou can start Main menu anytime.",
+    },
+    system: {
+      loopGuard:
+        "You've cycled this same step many times — let's reset to avoid confusion.\n\nTap “Start fresh”. If the problem returns, open Main menu and pick one category only.",
+    },
+    fallback: "That path isn't available. Going to main menu.",
+  },
   tripFlow: {
     activeTrip: "Active trip",
     pickupMap: "Pickup on map",
@@ -259,6 +509,14 @@ const en: Record<string, any> = {
     paymentLabel: "Payment",
     fareLabel: "Fare",
     startNav: "Start navigation",
+    navToPickup: "Navigate to pickup",
+    reachPickupFirst: "Reach the pickup location first",
+    reachDropFirst: "Reach the drop-off location first",
+    waitingGps: "Getting your location…",
+    enableLocationPickup: "Allow location access to verify you're at the pickup.",
+    enableLocationDrop: "Allow location access to verify you're at drop-off.",
+    completeDelivery: "Complete delivery",
+    confirmPrepaidContinue: "Continue — prepaid",
     reachedPickup: "Reached pickup location",
     confirmLoading: "Confirm loading",
     startTrip: "Start trip",
@@ -284,6 +542,7 @@ const en: Record<string, any> = {
       "Confirm you received {amount} from the customer. Your wallet will update according to partner settlement rules.",
     cashConfirm: "I collected the full amount",
     tripCompleted: "Trip completed.",
+    tripCompletedCompact: "Trip completed · Your share {share} · Wallet {wallet}",
     paymentRecorded: "Payment recorded.",
     gpsHint: "Turn on location for live tracking. You can still complete the trip.",
     tripCancelled: "This trip was cancelled by the customer or support. You can accept new requests when you are online.",
@@ -293,6 +552,22 @@ const en: Record<string, any> = {
     contactPickup: "Contact at pickup",
     completePaymentReminder:
       "Before you complete: confirm payment — for cash trips, collect the full fare from the customer first.",
+    cancelBreakdown: "Cancel trip — vehicle breakdown",
+    cancelBreakdownWarnTitle: "8-hour suspension",
+    cancelBreakdownWarnBody:
+      "Cancelling for vehicle breakdown suspends your account from going online for 8 hours. Continue only if the vehicle cannot complete the trip.",
+    cancelBreakdownConfirm: "Confirm cancellation",
+    cancelBreakdownContinue: "Continue",
+    cancelBreakdownFinalTitle: "Cancel trip for vehicle breakdown?",
+    cancelBreakdownFinalDesc:
+      "The trip will end and you will not be able to go online for 8 hours. Use only if the vehicle cannot continue.",
+    cancelBreakdownNeedAuth: "Sign in with your server account to cancel trips (Nest access token required).",
+    cancelBreakdownNeedTripId: "This trip is not linked to the server yet; cancellation is unavailable.",
+    cancelBreakdownSuccess: "Trip cancelled. Performance rules apply.",
+    cancelBreakdownFailed: "Could not cancel trip",
+    tripMenuAria: "Trip menu",
+    closeTripMenu: "Close menu",
+    menuTripHelp: "Help",
   },
   tripUX: {
     stepPickup: "Pickup",
@@ -304,16 +579,16 @@ const en: Record<string, any> = {
     guideNextLabel: "What happens next",
     guideAssignedNow: "Review pickup details and start navigation.",
     guideAssignedNext: "You will mark when you reach the pickup point.",
-    guideEnRoutePickupNow: "Drive safely to the pickup location.",
-    guideEnRoutePickupNext: "Tap when you arrive so the customer knows you are there.",
+    guideEnRoutePickupNow: "Drive to pickup. When you're close, tap Start trip (location is checked).",
+    guideEnRoutePickupNext: "After starting, you'll head to the drop-off.",
     guideArrivedPickupNow: "Wait for loading. Confirm only after goods are on board.",
     guideArrivedPickupNext: "After loading, confirm loading to start the trip.",
     guideLoadingNow: "Start the trip only when the vehicle is secure.",
     guideLoadingNext: "You will navigate toward the drop-off location.",
     guideTripStartedNow: "Drive safely to the drop location.",
     guideTripStartedNext: "Mark when you arrive at drop-off.",
-    guideEnRouteDropNow: "Follow traffic rules. Location is shared with the customer.",
-    guideEnRouteDropNext: "Confirm unloading after delivery is complete.",
+    guideEnRouteDropNow: "Drive to drop-off. When you're close, tap Complete delivery.",
+    guideEnRouteDropNext: "Cash trips: collect payment next. Prepaid: you'll finish payment in-app.",
     guideArrivedDropNow: "Complete unloading, then confirm.",
     guideArrivedDropNext: "Cash trips: collect payment. Prepaid: payment is already recorded.",
     guideUnloadingNow: "Finish unloading, then continue to payment steps.",
@@ -371,6 +646,8 @@ const en: Record<string, any> = {
     missedOffers: "Missed / expired offers",
     tripsCompletedPeriod: "Completed trips in this window: {count}",
     insightsError: "Couldn’t load insights. Close and open wallet again.",
+    payToUnlockCta: "Pay {amount} to unlock",
+    payToUnlockNote: "Demo: simulates a successful top-up. A real payment gateway will replace this later.",
   },
   confirmDialog: {
     pleaseWait: "Please wait…",
@@ -633,8 +910,15 @@ const hi: Record<string, any> = {
     notifPayoutBody: "कमाई सत्यापन के बाद आपके पंजीकृत बैंक खाते में जाती है। विवरण बदलने पर सहायता से संपर्क करें।",
     menuHelp: "सहायता व FAQ",
     menuContact: "सहायता से संपर्क",
-    supportTitle: "सहायता",
-    supportIntro: "फ़ोन या ईमेल से ड्राइवर सहायता टीम से जुड़ें।",
+    supportTitle: "सहायता और समर्थन",
+    supportIntro:
+      "Liftngo Assistant से चैट कर तुरंत जवाब पाएँ। अगर इंसान चाहिए तो कॉल या ईमेल करें।",
+    supportTitleTrip: "ट्रिप में मदद",
+    supportIntroTrip:
+      "आप सक्रिय ट्रिप पर हैं। नीचे विषय चुनें या संक्षेप में लिखें। इंसान चाहिए तो ईमेल करें — इस स्क्रीन से हेल्पलाइन कॉल नहीं।",
+    supportEscalation: "अभी भी इंसान चाहिए?",
+    supportEscalationTrip: "इंसान चाहिए?",
+    helpButtonAria: "सहायता और चैट खोलें",
     supportCall: "हेल्पलाइन कॉल करें",
     supportEmail: "ईमेल करें",
     supportHours: "सोम–शनि · सुबह 8 – रात 8 बजे IST",
@@ -656,6 +940,17 @@ const hi: Record<string, any> = {
     suspensionBannerPermanentDetail:
       "आपका साझेदार खाता ट्रिप प्राप्त करने से स्थायी रूप से रोका गया है। यदि यह गलत लगे तो सहायता से संपर्क करें।",
     suspensionBannerUntilDetail: "{date} तक ट्रिप ऑफ़र रोक दिए गए हैं।",
+    breakdownBannerTitle: "खाता निलंबित (वाहन खराबी)",
+    breakdownBannerDetail:
+      "आपने वाहन खराबी के कारण ट्रिप रद्द की। ऑनलाइन और ट्रिप ऑफ़र {countdown} तक रोकें।",
+    breakdownOnlineBlocked:
+      "वाहन खराबी रद्द के बाद अस्थायी निलंबन है। टाइमर खत्म होने पर फिर कोशिश करें।",
+    walletMinimumBannerTitle: "ट्रिप ऑफ़र रोके — वॉलेट न्यूनतम से कम",
+    walletMinimumBannerDetail:
+      "ट्रिप पाने के लिए कम से कम {min} वॉलेट में रखें। ऑफ़र खोलने के लिए {shortfall} जोड़ें।",
+    walletMinimumOnlineBlocked: "ऑनलाइन जाने से पहले वॉलेट न्यूनतम शेष तक टॉप-अप करें।",
+    walletMinimumAcceptBlocked: "वॉलेट न्यूनतम से कम है। ट्रिप स्वीकार करने से पहले टॉप-अप करें।",
+    walletMinimumPaySuccess: "वॉलेट में {amount} जोड़ा गया। तैयार हों तो ऑनलाइन जाएँ।",
     suspensionToastFirst:
       "2 दिन के लिए निलंबित: प्रदर्शन {threshold}% से कम होने पर ट्रिप छूटना।",
     suspensionToastSecond: "7 दिन के लिए निलंबित: कम प्रदर्शन पर बार-बार ट्रिप छूटना।",
@@ -794,6 +1089,236 @@ const hi: Record<string, any> = {
     drop: "ड्रॉप स्थान",
     accept: "स्वीकारें >",
   },
+  chatbot: {
+    inputLabel: "अपना संदेश लिखें",
+    inputPlaceholder: "संदेश…",
+    send: "भेजें",
+    welcomeV2:
+      "नमस्ते 👋 मैं Liftngo Assistant हूँ।\n\nसामान्य समस्या या श्रेणी चुनें — मैं कदम-दर-कदम समाधान दूँगा। जब अनुमति हो तो छोटा संदेश भी लिख सकते हैं।",
+    popular: { notReceiving: "⚡ ट्रिप ऑफ़र नहीं मिल रहे" },
+    intentV2: {
+      trip: "ट्रिप समस्या",
+      wallet: "वॉलेट व भुगतान",
+      performance: "प्रदर्शन व टियर",
+      cancellation: "रद्दीकरण",
+      app: "ऐप समस्या",
+      account: "खाता व सत्यापन",
+      other: "कुछ और",
+    },
+    tripJourney: {
+      welcome:
+        "आप ट्रिप पर हैं 👋\n\nकिस बारे में मदद चाहिए? विषय चुनें या नीचे लिखें।",
+      back: "← ट्रिप मदद मेनू",
+      mapsNavSol:
+        "पिकअप या ड्रॉप कार्ड पर «Google Maps में खोलें» से मोड़-दर-मोड़ नेविगेशन मिलेगा। सुरक्षित ड्राइव करें और नियमों का पालन करें।\n\nऐप के मानचित्र की रेखा सिर्फ संकेत है — नेविगेशन के लिए Maps उपयोग करें।",
+      cashPaySol:
+        "नकद ट्रिप में: पूर्ण करने से पहले ऐप में दिखी पूरी राशि लें। गिनती ध्यान से करें।\n\nग्राहक विवाद करे तो शांत रहें और ऐप में दिखे किराए का हवाला दें।",
+      paymentAppSol:
+        "प्रीपेड / गैर-नकद ट्रिप में भुगतान ऐप में दर्ज होता है। चरणों का पालन करें — जब कहा जाए तब पुष्टि करें; जब तक नकद न लिखा हो तब तक नकद न लें।\n\nअगला चरण न खुले तो कनेक्शन देखें और कुछ सेकंड बाद फिर कोशिश करें।",
+      stuckSol:
+        "ट्रिप के चरण क्रम से होते हैं (पिकअप → लोड → ड्राइव → ड्रॉप → भुगतान → पूर्ण)। सिर्फ नीचे हरा बटन सक्रिय चरण के लिए काम करता है।\n\n• टैप न चले तो कीबोर्ड/ओवरले बंद करें।\n• भुगतान के बाद अटकें तो नकद ट्रिप में पहले नकद पुष्टि करें।\n\nफिर भी? नीचे नेटवर्क चरण या और ट्रिप मदद खोलें।",
+      opt: {
+        mapsNav: "मानचित्र व नेविगेशन",
+        cashPay: "इस ट्रिप पर नकद भुगतान",
+        paymentApp: "प्रीपेड / ऐप भुगतान चरण",
+        stuck: "गलत चरण या बटन नहीं चलता",
+        breakdown: "वाहन खराबी / ट्रिप रद्द",
+        notReceiving: "नए ट्रिप ऑफ़र नहीं मिल रहे",
+        fullTripMenu: "सभी ट्रिप समस्या श्रेणियाँ…",
+        allTopics: "पूरा असिस्टेंट मेनू (वॉलेट, ऐप, खाता…)",
+      },
+    },
+    bool: { yes: "हाँ", no: "नहीं" },
+    net: { stable: "ठीक / स्थिर", unstable: "कमज़ोर या बार-बार टूटता है" },
+    opt: {
+      backMenu: "मुख्य मेनू",
+      backSection: "पीछे",
+      changeTopic: "विषय बदलें (रीसेट)",
+      tripsNavPickup: "पिकअप / नेविगेशन",
+      tripsNoOffers: "ट्रिप ऑफ़र नहीं मिल रहे",
+      tripsPayment: "भुगतान या किराया",
+      tripsStuck: "ट्रिप स्क्रीन अटकी / चरण",
+      walletBalance: "बैलेंस गलत लगता है",
+      walletTopUp: "पैसे कैसे जोड़ें",
+      walletSettlement: "भुगतान कब मिलेगा?",
+      perfScores: "स्कोर कैसे काम करते हैं",
+      perfSuspension: "निलंबन या खराबी",
+      cancelBreakdown: "वाहन खराबी से रद्द",
+      cancelOther: "अन्य रद्दीकरण प्रश्न",
+      appCrash: "ऐप क्रैश / फ्रीज",
+      appLocation: "लोकेशन / GPS",
+      appNetwork: "इंटरनेट / कनेक्शन",
+    },
+    action: {
+      retryOnline: "मैं ऑनलाइन हूँ — फिर जाँचें",
+      stillBroken: "अभी भी नहीं ठीक",
+      fixedRetry: "ठीक किया — फिर से चेक",
+      tryAgain: "ये कदम फिर से",
+      openWallet: "वॉलेट / कमाई खोलें",
+      waitRetry: "रुककर फिर कोशिश करूँगा",
+      newChat: "नई शुरुआत",
+      refreshApp: "रीफ्रेश / ऐप दोबारा खोला",
+      checkNetwork: "नेटवर्क चरण देखें",
+      openTripMenu: "और ट्रिप मदद",
+    },
+    link: { partnerTier: "पार्टनर स्कोर व टियर खोलें" },
+    trip: {
+      root: "ट्रिप — कौन सी समस्या सही बैठती है?",
+      sub: {
+        notReceiving: "ट्रिप ऑफ़र नहीं मिल रहे",
+        disappeared: "ट्रिप स्क्रीन से गायब",
+        wrongAssigned: "गलत ट्रिप / गलत विवरण",
+        cannotAccept: "ट्रिप स्वीकार नहीं हो रही",
+        comboHint: "ऑफ़र नहीं + स्कोर भी कम",
+      },
+      nrt: {
+        qOnline: "क्या डैशबोर्ड पर आप ट्रिप पाने के लिए ऑनलाइन हैं?",
+        qLocation: "क्या इस ब्राउज़र/ऐप के लिए लोकेशन अनुमति चालू है?",
+        qNetwork: "क्या इंटरनेट अभी स्थिर है?",
+        qSuspended: "क्या लाल बैनर निलंबन या वाहन खराबी दिखाता है?",
+        qLowPerf: "क्या स्कोर लगभग {threshold} से कम है या हाल में कई अनुरोध छूट गए?",
+        solOffline:
+          "अक्सर ऑफ़र इसलिए नहीं आते क्योंकि ऐप आपको ऑफ़लाइन मानता है।\n\n1) डैशबोर्ड खोलें\n2) ऑनलाइन जाएँ\n3) 1–2 मिनट मैप पर रहें\n\nलाल निलंबन हो तो टाइमर खत्म होने तक ऑफ़र बंद।",
+        solLocation:
+          "बिना लोकेशन मैचिंग ठीक नहीं होती।\n\n• ब्राउज़र: अनुमति दें या साइट सेटिंग में चालू करें\n• फोन: ऐप → अनुमतियाँ → लोकेशन → उपयोग के दौरान\nफिर ऑनलाइन जाएँ।",
+        solNetwork:
+          "कमज़ोर सिग्नल लाइव ऑफ़र रोक सकता है।\n\n• VPN बंद करें\n• Wi‑Fi ↔ मोबाइल डेटा बदलें\n• सिग्नल ठीह जगह कुछ मिनट ऑनलाइन रहें",
+        solSuspended:
+          "लाल सूचना का मतलब जानबूझकर ऑफ़र रोके गए — जैसे कम स्कोर पर छूटी ट्रिप, या वाहन खराबी रद्द के बाद 8 घंटे।\n\nपट्टी में कारण और समय पढ़ें। टिप के लिए स्कोर लगभग {threshold}/100।",
+        solAllClear:
+          "आपने कहा: ऑनलाइन, लोकेशन, नेट ठीक, निलंबन नहीं।\n\n• कुछ मिनट डैशबोर्ड पर रहें\n• एक बार ऑफ़लाइन→ऑनलाइन\n• वेब पर नया टैब आज़माएँ\n\nमांग इलाके व समय पर निर्भर — शांत समय सामान्य है।",
+      },
+      disp: {
+        sol: "ट्रिप गायब: अक्सर रद्द, दूसरे ड्राइवर को असाइन, या सत्र रिफ्रेश।\n\n1) मेनू से ट्रिप इतिहास\n2) ऐप/टैब पूरी बंद कर खोलें\n3) ऑनलाइन रहें",
+        afterRefresh: "फिर भी गायब लगे तो «अभी भी नहीं ठीक» दबाएँ — हम लॉग रखेंगे।",
+      },
+      wrong: {
+        sol: "गलत पिकअप/विवरण:\n\n1) सुरक्षित हो तो ही आगे\n2) ज़रूर हो तो डिस्पैच/ग्राहक से पुष्टि\n3) हेडर की ऑर्डर ID नोट करें\n\nबार-बार हो तो «अभी भी नहीं ठीक»।",
+      },
+      accept: {
+        sol: "स्वीकार नहीं होता?\n\n• टाइमर जल्दी खत्म होता है\n• नेटवर्क चरण देखें\n• कीबोर्ड/डायलॉग हटाएँ\n• दूसरे ने ले ली तो सामान्य\n\nनीचे नेटवर्क या और ट्रिप मदद।",
+      },
+    },
+    combo: {
+      tripPerf: {
+        q: "क्या साथ में ऑफ़र नहीं आ रहे और स्कोर कम / छूटी चेतावनी भी है?",
+        resolved:
+          "आमतौर पर दो बातें एक साथ:\n\n1) कम प्रदर्शन पर डिस्पैच प्राथमिकता कम कर सकता है\n2) ऑफ़लाइन/लोकेशन/नेट/निलंबन भी रोकते हैं\n\n«ट्रिप ऑफ़र नहीं» वाले चरण पहले पूरे करें, फिर समय पर स्वीकार व पूर्ण ट्रिप से स्कोर सुधारें (लगभग {threshold}/100 टिप)।",
+      },
+    },
+    wallet: {
+      rootV2: "वॉलेट — कौन सा मामला?",
+      sub: {
+        low: "बैलेंस कम लगता है",
+        rechargeFail: "रिचार्ज / टॉप-अप फेल",
+        deducted: "कटौती हुई, वॉलेट न बढ़ा",
+        negative: "नकारात्मक / अजीब समायोजन",
+        suspendedCombo: "भुगतान हुआ पर अभी भी निलंबन",
+      },
+      low: {
+        sol: "वॉलेट हर ट्रिप के बाद तुरंत नहीं बदलता।\n\n• रिफ्रेश / ऐप दोबारा खोलें\n• पूर्ण ट्रिप इतिहास देखें\n• कमीशन व शुल्क याद रखें",
+      },
+      topup: {
+        hint: "टॉप-अप मेनू में हो तो वॉलेट से। न हो तो बैंक निपटान हो सकता है। UPI/बैंक में कभी-कभी देरी — कुछ मिनट बाद रिफ्रेश।",
+      },
+      re: {
+        q1: "रिचार्ज में क्या हुआ?",
+        bankPending: "बैंक/UPI से गया, वॉलेट खाली",
+        appError: "ऐप में एरर या रद्द",
+        pending:
+          "बैंक सफल दिखे पर वॉलेट खाली:\n\n1) 15–30 मिनट इंतज़ार\n2) रेफरेंस ID स्क्रीनशॉट\n3) रिफ्रेश\n\nकई घंटे बाद भी «अभी भी नहीं ठीक»।",
+        app: "भुगतान UI एरर:\n\n1) लिमिट देखें\n2) स्थिर नेट पर एक बार\n3) दोबारा भुगतान से पहले पहली स्थिति देखें\n\nबार-बार «अभी भी नहीं ठीक»।",
+      },
+      ded: {
+        sol: "कटौती दिखे पर वॉलेट न बढ़े:\n\n• शुल्क/समायोजन तो नहीं\n• रिफ्रेश\n• रसीद सूचना देखें\n\nअनजान राशि + समय हो तो «अभी भी नहीं ठीक»।",
+      },
+      neg: {
+        sol: "नकारात्मक अक्सर चार्जबैक/सुधार से। इतिहास व नोटिस देखें। लंबे समय के लिए अच्छी पूर्ण ट्रिपें मदद करती हैं। गणित असंभव लगे तो «अभी भी नहीं ठीक»।",
+      },
+      sus: {
+        combo: "पैसा अलग, खाता स्थिति अलग — निलंबन ऑफ़र रोक सकता है भले वॉलेट ठीक हो।\n\nनीचे पहले क्या जाँचें चुनें।",
+        checkBanner: "निलंबन / खराबी बैनर",
+        checkWallet: "वॉलेट / क्रेडिट",
+      },
+    },
+    perf: {
+      rootV2: "प्रदर्शन — क्या चिंता है?",
+      sub: { low: "स्कोर कम", drop: "अचानक गिरा", missed: "छूटी ट्रिप / भ्रम" },
+      low: {
+        sol: "स्कोर हाल की ट्रिपों की खिड़की से — पूर्ण अच्छी, छूटी/ड्राइवर रद्द बुरी।\n\nऑनलाइन तभी जब जल्दी जवाब दे सकें। प्रीमियम चर्चा लगभग {threshold}/100 टिप।",
+      },
+      drop: {
+        sol: "अचानक गिरावट अक्सर छूटी/रद्द या खिड़की बदलने से। तुरंत ठीक नहीं — अच्छी पूर्ण ट्रिपें जोड़ें। लाल निलंबन जब तक समाप्त न हो।",
+      },
+      missed: {
+        sol: "छूटी = स्वीकार समय समाप्त। प्रदर्शन पर असर।\n\nसूचनाएँ चालू, ऑनलाइन तभी जब जवाब दे सकें। ऑफ़र फ्लेकी हों तो «ट्रिप ऑफ़र नहीं» चेकलिस्ट भी।",
+      },
+    },
+    cancel: {
+      rootV2: "रद्दीकरण — स्थिति चुनें:",
+      sub: { mistake: "गलती से रद्द", breakdown: "वाहन खराबी", penalty: "जुर्माना / डर" },
+      mistake: {
+        sol: "गलत रद्द दर पर पड़ता है। दोहराव से बचें। पैटर्न पर सपोर्ट देख सकता है। अगली ट्रिपें साफ रखें।",
+      },
+      break: {
+        sol: "खराबी रद्द से 8 घंटे ऑनलाइन रोक — केवल जब वाहन सच में न चले। टाइमर बाद फिर ऑनलाइन।",
+      },
+      pen: {
+        sol: "जुर्माना/निलंबन लाल बैनर में समय व कारण। ट्रिप से मेल न खाए तो ऑर्डर ID व समय के साथ «अभी भी नहीं ठीक»।",
+      },
+    },
+    app: {
+      rootV2: "ऐप समस्या — एक चुनें:",
+      sub: { crash: "क्रैश / फ्रीज", gps: "GPS / मानचित्र", network: "कनेक्शन", login: "लॉगिन / OTP" },
+      crash: {
+        solV2: "1) ऐप पूरी बंद\n2) अपडेट / वेब डेटा साफ़\n3) फोन रीस्टार्ट\n4) स्टोरेज खाली करें\nफिर लॉगिन व ऑनलाइन।",
+      },
+      gps: {
+        solV2: "सटीक लोकेशन, नकली GPS बंद, वेब पर हर सत्र अनुमति। ट्रिप के दौरान GPS चालू।",
+      },
+      net: {
+        solV2: "स्पिनर? स्थिर नेट, VPN बंद, डैशबोर्ड बैनर जब तक रीकनेक्ट न हो। केवल Liftngo हो तो टैब बदलें या पुनः इंस्टॉल अंतिम।",
+      },
+      login: {
+        sol: "नंबर/OTP ध्यान से। रीसेंड कूलडाउन। दूसरा नेट। कैरियर शॉर्ट कोड ब्लॉक हो तो Wi‑Fi कॉलिंग। कई फेल के बाद 10 मिनट रुकें।",
+      },
+    },
+    acct: {
+      root: "खाता व सत्यापन:",
+      sub: { verify: "सत्यापन लंबा / अस्वीकृत", docs: "दस्तावेज़ / अपलोड", phone: "फोन या प्रोफाइल बदलाव" },
+      verify: {
+        sol: "समय व गुणवत्ता पर निर्भर। अस्वीकृति कारण पढ़ कर तेज़ फोटो दोबारा। SLA से बहुत अधिक देरी हो «अभी भी नहीं ठीक»।",
+      },
+      docs: {
+        sol: "अच्छी रोशनी, चमक नहीं, साइज़ सीमा। अपलोड घूमे तो नेट बदलकर एक बार।",
+      },
+      phone: {
+        sol: "रजिस्टर्ड नंबर बदलाव अक्सर समीक्षा। पुराना/नया नंबर, पहचान, हाल की ट्रिप ID तैयार रखें। «अभी भी नहीं ठीक» — इस चैट से कॉलबैक नहीं, ईमेल से जुड़ेंगे।",
+      },
+    },
+    other: {
+      rootV2: "एक-दो पंक्तियों में लिखें। हम इसे चैट पथ के साथ सेव करते हैं। बटन तेज़ होते हैं।",
+    },
+    freeform: {
+      ackV2:
+        "संदेश सहेजा — आज के चैट संदर्भ के साथ।\n\nडैशबोर्ड से स्कोर/वॉलेट/ट्रिप फिर खोलें। कदमों के बाद भी न हो तो किसी भी फ्लो में «अभी भी नहीं ठीक»।\n\nमुख्य मेनू नई सत्र।",
+    },
+    clarify: {
+      pickOption:
+        "मैं बटनों से बेहतर काम करता हूँ — इस स्क्रीन पर टाइप नोट उपयोग नहीं हुआ।\n\nनीचे विकल्प या मुख्य मेनू।",
+    },
+    unresolved: {
+      soft: "सामान्य उपाय आज़मा लिए। विवरण इस चैट से लॉग रहेंगे।\n\nअगला: रजिस्टर्ड ईमेल से छोटा मेल — फोन नंबर और यहाँ क्या आज़माया, संक्षेप में।",
+      emailCta: "ईमेल कदम नोट कर लिया — लॉग करें",
+      logged:
+        "लॉग हो गया। हाल की पसंद व संदेश स्थानीय रूप से सहेजे गए।\n\nविषय: «ड्राइवर ऐप — सेल्फ हेल्प पूर्ण»। फोन, क्षेत्र, समय, ऑर्डर ID जोड़ें। मुख्य मेनू कभी भी।",
+    },
+    system: {
+      loopGuard:
+        "इसी चरण पर बहुत बार घूमे — भ्रम से बचाने रीसेट करें। «नई शुरुआत» दबाएँ। फिर मुख्य मेनू से एक ही श्रेणी चुनें।",
+    },
+    fallback: "यह मार्ग उपलब्ध नहीं। मुख्य मेनू।",
+  },
   tripFlow: {
     activeTrip: "सक्रिय ट्रिप",
     pickupMap: "नक्शे पर पिकअप",
@@ -809,6 +1334,14 @@ const hi: Record<string, any> = {
     paymentLabel: "भुगतान",
     fareLabel: "किराया",
     startNav: "नेविगेशन शुरू करें",
+    navToPickup: "पिकअप तक जाएँ",
+    reachPickupFirst: "पहले पिकअप स्थान पर पहुँचें",
+    reachDropFirst: "पहले ड्रॉप-ऑफ स्थान पर पहुँचें",
+    waitingGps: "लोकेशन मिल रही है…",
+    enableLocationPickup: "पिकअप पुष्टि के लिए लोकेशन की अनुमति दें।",
+    enableLocationDrop: "ड्रॉप पुष्टि के लिए लोकेशन की अनुमति दें।",
+    completeDelivery: "डिलीवरी पूर्ण करें",
+    confirmPrepaidContinue: "जारी रखें — प्रीपेड",
     reachedPickup: "पिकअप पर पहुँच गया",
     confirmLoading: "लोडिंग की पुष्टि करें",
     startTrip: "ट्रिप शुरू करें",
@@ -833,6 +1366,7 @@ const hi: Record<string, any> = {
       "पुष्टि करें कि ग्राहक से {amount} मिल गए। वॉलेट साझेदार निपटान नियमों के अनुसार अपडेट होगा।",
     cashConfirm: "पूरी राशि मिल गई",
     tripCompleted: "ट्रिप पूर्ण।",
+    tripCompletedCompact: "ट्रिप पूर्ण · आपकी हिस्सेदारी {share} · वॉलेट {wallet}",
     paymentRecorded: "भुगतान दर्ज।",
     gpsHint: "लाइव ट्रैकिंग के लिए लोकेशन चालू करें। फिर भी ट्रिप पूरी कर सकते हैं।",
     tripCancelled: "यह ट्रिप ग्राहक या सहायता द्वारा रद्द कर दी गई। ऑनलाइन रहकर नए अनुरोध स्वीकार कर सकते हैं।",
@@ -842,6 +1376,22 @@ const hi: Record<string, any> = {
     contactPickup: "पिकअप पर संपर्क",
     completePaymentReminder:
       "पूर्ण करने से पहले: भुगतान सुनिश्चित करें — नकद ट्रिप में पहले ग्राहक से पूरी राशि लें।",
+    cancelBreakdown: "ट्रिप रद्द — वाहन खराबी",
+    cancelBreakdownWarnTitle: "8 घंटे निलंबन",
+    cancelBreakdownWarnBody:
+      "वाहन खराबी से रद्द करने पर 8 घंटे तक ऑनलाइन नहीं जा सकेंगे। केवल तभी जारी रखें जब ट्रिप पूरी न हो सके।",
+    cancelBreakdownConfirm: "रद्द करने की पुष्टि करें",
+    cancelBreakdownContinue: "आगे बढ़ें",
+    cancelBreakdownFinalTitle: "वाहन खराबी के लिए ट्रिप रद्द करें?",
+    cancelBreakdownFinalDesc:
+      "ट्रिप समाप्त होगी और 8 घंटे तक ऑनलाइन नहीं जा सकेंगे। केवल तभी जब वाहन आगे न बढ़ सके।",
+    cancelBreakdownNeedAuth: "ट्रिप रद्द करने के लिए सर्वर साइन-इन चाहिए (Nest टोकन)।",
+    cancelBreakdownNeedTripId: "यह ट्रिप सर्वर से लिंक नहीं है; रद्द उपलब्ध नहीं।",
+    cancelBreakdownSuccess: "ट्रिप रद्द। प्रदर्शन नियम लागू।",
+    cancelBreakdownFailed: "ट्रिप रद्द नहीं हो सकी",
+    tripMenuAria: "ट्रिप मेनू",
+    closeTripMenu: "मेनू बंद करें",
+    menuTripHelp: "मदद",
   },
   tripUX: {
     stepPickup: "पिकअप",
@@ -853,16 +1403,16 @@ const hi: Record<string, any> = {
     guideNextLabel: "आगे क्या होगा",
     guideAssignedNow: "पिकअप विवरण देखें और नेविगेशन शुरू करें।",
     guideAssignedNext: "पिकअप पर पहुँचने पर बटन दबाएँ।",
-    guideEnRoutePickupNow: "सुरक्षित ड्राइव करके पिकअप पर जाएँ।",
-    guideEnRoutePickupNext: "पहुँचने पर टैप करें ताकि ग्राहक को पता चले।",
+    guideEnRoutePickupNow: "पिकअप पर जाएँ। पास पहुँचकर «ट्रिप शुरू» दबाएँ (लोकेशन जाँच)।",
+    guideEnRoutePickupNext: "शुरू करने के बाद ड्रॉप की ओर।",
     guideArrivedPickupNow: "लोडिंग की प्रतीक्षा करें। सामान चढ़ने के बाद ही पुष्टि करें।",
     guideArrivedPickupNext: "लोडिंग के बाद पुष्टि कर ट्रिप शुरू करें।",
     guideLoadingNow: "वाहन सुरक्षित होने पर ही ट्रिप शुरू करें।",
     guideLoadingNext: "फिर ड्रॉप की ओर नेविगेट करेंगे।",
     guideTripStartedNow: "ड्रॉप तक सुरक्षित चलाएँ।",
     guideTripStartedNext: "ड्रॉप पर पहुँचने पर चिह्नित करें।",
-    guideEnRouteDropNow: "नियमों का पालन करें। लोकेशन ग्राहक के साथ साझा है।",
-    guideEnRouteDropNext: "डिलीवरी के बाद अनलोडिंग पुष्टि करें।",
+    guideEnRouteDropNow: "ड्रॉप तक जाएँ। पास पहुँचकर «डिलीवरी पूर्ण» दबाएँ।",
+    guideEnRouteDropNext: "नकद: अगला भुगतान। प्रीपेड: ऐप में आगे।",
     guideArrivedDropNow: "अनलोडिंग पूरी करें, फिर पुष्टि करें।",
     guideArrivedDropNext: "नकद: भुगतान लें। प्रीपेड: ऐप में पुष्ट।",
     guideUnloadingNow: "अनलोडिंग पूरी कर भुगतान चरण पर जाएँ।",
@@ -918,6 +1468,8 @@ const hi: Record<string, any> = {
     missedOffers: "छूटे / समाप्त ऑफ़र",
     tripsCompletedPeriod: "इस अवधि में पूर्ण ट्रिप: {count}",
     insightsError: "अंतर्दृष्टि लोड नहीं हुई। वॉलेट बंद करके फिर खोलें।",
+    payToUnlockCta: "अनलॉक के लिए {amount} भुगतान करें",
+    payToUnlockNote: "डेमो: सफल टॉप-अप माना जाएगा। बाद में असली भुगतान गेटवे जुड़ेगा।",
   },
   confirmDialog: {
     pleaseWait: "कृपया प्रतीक्षा करें…",

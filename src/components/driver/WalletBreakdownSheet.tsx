@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import EarningsInsightsPanel from "@/components/driver/EarningsInsightsPanel";
 import { XMarkIcon } from "@/components/icons";
 import { useLocale } from "@/context/LocaleContext";
 import { useDriverEarningsDashboard } from "@/hooks/useDriverEarningsDashboard";
+import { emitDriverAvailabilitySynced } from "@/lib/driver/emitDriverAvailabilitySynced";
+import {
+  MIN_DRIVER_WALLET_BALANCE_INR,
+  isWalletBelowMinimum,
+  walletShortfallToMinimum,
+} from "@/lib/driver/walletConstants";
 import { formatInr } from "@/lib/formatInr";
 import { useShallow } from "zustand/shallow";
 import { useDriverWalletStore } from "@/stores/driverWalletStore";
@@ -19,13 +26,21 @@ export default function WalletBreakdownSheet({ open, onClose }: WalletBreakdownS
   const { t, activeLocale } = useLocale();
   const dateLocaleTag = activeLocale === "hi" ? "hi-IN" : "en-IN";
   const insights = useDriverEarningsDashboard(open);
-  const { walletBalance, todayEarnings, completedTrips } = useDriverWalletStore(
+  const { walletBalance, todayEarnings, completedTrips, payMinimumShortfall } = useDriverWalletStore(
     useShallow((s) => ({
       walletBalance: s.walletBalance,
       todayEarnings: s.todayEarnings,
       completedTrips: s.completedTrips,
+      payMinimumShortfall: s.payMinimumShortfall,
     })),
   );
+
+  const onPayMinimum = useCallback(() => {
+    const paid = payMinimumShortfall();
+    if (paid <= 0) return;
+    toast.success(t("dashboard.walletMinimumPaySuccess", { amount: formatInr(paid) }));
+    emitDriverAvailabilitySynced();
+  }, [payMinimumShortfall, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -64,6 +79,27 @@ export default function WalletBreakdownSheet({ open, onClose }: WalletBreakdownS
           <p className="pl-1 text-xs font-medium text-[var(--color-text-secondary)]">{t("wallet.balanceLabel")}</p>
         </div>
         <div className="space-y-4 px-5 py-4">
+          {isWalletBelowMinimum(walletBalance) ? (
+            <div className="rounded-xl border-2 border-amber-600/80 bg-amber-50 p-4">
+              <p className="text-sm font-bold text-amber-950">{t("dashboard.walletMinimumBannerTitle")}</p>
+              <p className="mt-1 text-xs font-medium leading-snug text-amber-950/90">
+                {t("dashboard.walletMinimumBannerDetail", {
+                  min: formatInr(MIN_DRIVER_WALLET_BALANCE_INR),
+                  shortfall: formatInr(walletShortfallToMinimum(walletBalance)),
+                })}
+              </p>
+              <button
+                type="button"
+                onClick={onPayMinimum}
+                className="mt-3 w-full rounded-lg bg-[var(--color-primary)] px-3 py-2.5 text-sm font-bold text-white shadow-sm active:opacity-90"
+              >
+                {t("wallet.payToUnlockCta", {
+                  amount: formatInr(walletShortfallToMinimum(walletBalance)),
+                })}
+              </button>
+              <p className="mt-2 text-[10px] font-medium text-amber-950/75">{t("wallet.payToUnlockNote")}</p>
+            </div>
+          ) : null}
           <div className="rounded-xl border border-[var(--color-gray-100)] bg-[var(--color-gray-50)] p-4">
             <div className="flex justify-between text-sm">
               <span className="text-[var(--color-text-secondary)]">{t("wallet.todayNet")}</span>

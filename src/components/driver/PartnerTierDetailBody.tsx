@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useLocale } from "@/context/LocaleContext";
 import {
   DriverSegment,
@@ -7,6 +8,7 @@ import {
   PREMIUM_MIN_PERFORMANCE_SCORE,
   type DriverSegmentPayload,
 } from "@/lib/driver/driverSegment";
+import { performanceColorBand, performanceTextClass } from "@/lib/driver/performanceColors";
 
 function CriterionRow({
   label,
@@ -17,7 +19,7 @@ function CriterionRow({
   notMetLabel,
 }: {
   label: string;
-  valueLine: string;
+  valueLine: ReactNode;
   requirementLine: string;
   met: boolean;
   metLabel: string;
@@ -50,6 +52,9 @@ export default function PartnerTierDetailBody({ tagging }: PartnerTierDetailBody
   const perfOk = tagging.performanceScore >= PREMIUM_MIN_PERFORMANCE_SCORE;
   const cancelOk = tagging.cancellationRatePct < PREMIUM_MAX_CANCELLATION_RATE_PCT;
   const isPremium = tagging.segment === DriverSegment.PREMIUM;
+
+  const perfBand = performanceColorBand(tagging.performanceScore);
+  const perfClass = performanceTextClass(perfBand);
 
   const scoreStr = Number.isInteger(tagging.performanceScore)
     ? String(tagging.performanceScore)
@@ -86,7 +91,9 @@ export default function PartnerTierDetailBody({ tagging }: PartnerTierDetailBody
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <CriterionRow
           label={t("dashboard.partnerTierPerformance")}
-          valueLine={t("dashboard.partnerTierScoreValue", { score: scoreStr })}
+          valueLine={
+            <span className={perfClass}>{t("dashboard.partnerTierScoreValue", { score: scoreStr })}</span>
+          }
           requirementLine={t("dashboard.partnerTierPerformanceNeed", {
             min: PREMIUM_MIN_PERFORMANCE_SCORE,
           })}

@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
-import { DRIVER_AUTH_TOKEN_KEY } from "@/lib/driver/authConstants";
-import { driverDispatchAcceptTrip, driverDispatchRejectTrip } from "@/services/dispatchActions";
+import { useAcceptDispatchTripMutation, useRejectDispatchTripMutation } from "@/hooks/dispatch";
 import { useDriverDispatchStore } from "@/stores/driverDispatchStore";
 import { useLiftngoSocketRuntimeStore } from "@/stores/liftngoSocketRuntimeStore";
 import type { DispatchTrip } from "@/types/dispatch";
@@ -36,29 +35,44 @@ function useOfferCountdownMs(deadline: number | undefined): number {
 
 function OfferRow({
   trip,
-  token,
   connected,
+  acceptMutation,
+  rejectMutation,
 }: {
   trip: DispatchTrip;
-  token: string | null;
   connected: boolean;
+  acceptMutation: ReturnType<typeof useAcceptDispatchTripMutation>;
+  rejectMutation: ReturnType<typeof useRejectDispatchTripMutation>;
 }) {
   const locks = useDriverDispatchStore((s) => s.actionLocks);
   const external = useDriverDispatchStore((s) => s.externalBusyTripIds);
   const leftMs = useOfferCountdownMs(trip.offerExpiresAt);
   const busyKind = locks.get(trip.tripId);
   const locked = Boolean(busyKind) || external.has(trip.tripId);
-  const acceptBusy = busyKind === "accept";
+  const acceptBusy =
+    busyKind === "accept" || (acceptMutation.isPending && acceptMutation.variables === trip.tripId);
+  const rejectRowBusy =
+    busyKind === "reject" || (rejectMutation.isPending && rejectMutation.variables === trip.tripId);
 
   const onAccept = useCallback(async () => {
-    const res = await driverDispatchAcceptTrip(trip.tripId, token);
-    if (!res.ok) toast.error("Accept failed", { description: res.message });
-  }, [trip.tripId, token]);
+    try {
+      const res = await acceptMutation.mutateAsync(trip.tripId);
+      if (!res.ok) toast.error("Accept failed", { description: res.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Accept failed";
+      toast.error("Accept failed", { description: message });
+    }
+  }, [trip.tripId, acceptMutation]);
 
   const onReject = useCallback(async () => {
-    const res = await driverDispatchRejectTrip(trip.tripId, token);
-    if (!res.ok) toast.error("Reject failed", { description: res.message });
-  }, [trip.tripId, token]);
+    try {
+      const res = await rejectMutation.mutateAsync(trip.tripId);
+      if (!res.ok) toast.error("Reject failed", { description: res.message });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Reject failed";
+      toast.error("Reject failed", { description: message });
+    }
+  }, [trip.tripId, rejectMutation]);
 
   const sec = Math.ceil(leftMs / 1000);
 
@@ -98,11 +112,11 @@ function OfferRow({
         </button>
         <button
           type="button"
-          disabled={locked || !connected || busyKind === "reject"}
+          disabled={locked || !connected || rejectRowBusy}
           onClick={() => void onReject()}
           className="flex-1 rounded-xl border-2 border-[var(--color-gray-200)] py-2.5 text-xs font-bold text-[var(--color-text-primary)] hover:bg-[var(--color-gray-50)] disabled:opacity-45"
         >
-          {busyKind === "reject" ? "…" : "Reject"}
+          {rejectRowBusy ? "…" : "Reject"}
         </button>
       </div>
     </li>
@@ -117,6 +131,8 @@ type Props = {
  * Production dispatch UI: Map-backed offers, countdown, accept locking, socket fallback banner.
  */
 export default function DriverIncomingTripsPanel({ hidden }: Props) {
+  const acceptMutation = useAcceptDispatchTripMutation();
+  const rejectMutation = useRejectDispatchTripMutation();
   const offers = useDriverDispatchStore(
     useShallow((s) =>
       Array.from(s.availableTrips.values()).sort((a, b) => (a.offerExpiresAt ?? 0) - (b.offerExpiresAt ?? 0)),
@@ -126,8 +142,6 @@ export default function DriverIncomingTripsPanel({ hidden }: Props) {
   const connected = useLiftngoSocketRuntimeStore((s) => s.connected);
   const reconnecting = useLiftngoSocketRuntimeStore((s) => s.reconnecting);
   const lastError = useLiftngoSocketRuntimeStore((s) => s.lastError);
-
-  const token = typeof window !== "undefined" ? localStorage.getItem(DRIVER_AUTH_TOKEN_KEY) : null;
 
   const showSkeleton = !connected && offers.length === 0;
 
@@ -161,7 +175,13 @@ export default function DriverIncomingTripsPanel({ hidden }: Props) {
       ) : offers.length > 0 ? (
         <ul className="space-y-2">
           {offers.map((trip) => (
-            <OfferRow key={trip.tripId} trip={trip} token={token} connected={connected} />
+            <OfferRow
+              key={trip.tripId}
+              trip={trip}
+              connected={connected}
+              acceptMutation={acceptMutation}
+              rejectMutation={rejectMutation}
+            />
           ))}
         </ul>
       ) : null}

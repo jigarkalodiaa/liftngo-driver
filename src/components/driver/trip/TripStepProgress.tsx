@@ -46,8 +46,8 @@ export default function TripStepProgress({ status }: TripStepProgressProps) {
   const activeSeg = segmentIndex(status);
 
   return (
-    <div className="rounded-2xl border border-[var(--color-gray-200)] bg-white p-3 shadow-sm">
-      <div className="mb-2 flex h-2 overflow-hidden rounded-full bg-[var(--color-gray-200)]">
+    <div className="rounded-xl border border-[var(--color-gray-200)] bg-white p-2 shadow-sm">
+      <div className="mb-1.5 flex h-1.5 overflow-hidden rounded-full bg-[var(--color-gray-200)]">
         <motion.div
           className="h-full rounded-full bg-[var(--color-primary)]"
           initial={false}
@@ -55,7 +55,7 @@ export default function TripStepProgress({ status }: TripStepProgressProps) {
           transition={{ type: "spring", stiffness: 120, damping: 20 }}
         />
       </div>
-      <div className="flex justify-between gap-1 text-[9px] font-bold uppercase leading-tight text-[var(--color-text-secondary)]">
+      <div className="flex justify-between gap-0.5 text-[8px] font-bold uppercase leading-tight text-[var(--color-text-secondary)]">
         {STEP_KEYS.map((key, i) => (
           <span
             key={key}

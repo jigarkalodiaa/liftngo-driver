@@ -1,19 +1,19 @@
 "use client";
 
 import { useCallback } from "react";
-import { cancelTrip, createTrip } from "@/services/dispatchRest";
+import { useCancelTripMutation, useCreateTripMutation } from "@/hooks/dispatch";
 
 /**
  * REST helpers for customer booking (POST /trips, PATCH cancel). Pair with `useCustomerSocket`.
+ * Auth: global axios interceptors (QueryProvider).
  */
-export function useCustomerTripFlow(authToken: string | null) {
+export function useCustomerTripFlow() {
+  const create = useCreateTripMutation();
+  const cancelMut = useCancelTripMutation();
   const book = useCallback(
-    (body: Record<string, unknown>) => createTrip(body, authToken),
-    [authToken],
+    (body: Record<string, unknown>) => create.mutateAsync(body),
+    [create],
   );
-  const cancel = useCallback(
-    (tripId: string) => cancelTrip(tripId, authToken),
-    [authToken],
-  );
+  const cancel = useCallback((tripId: string) => cancelMut.mutateAsync(tripId), [cancelMut]);
   return { book, cancel };
 }

@@ -7,11 +7,9 @@ export type DispatchActionResult = { ok: true } | { ok: false; message: string; 
 
 /**
  * Accept with trip locking, optimistic removal, rollback on REST failure, multi-tab signal.
+ * Auth: Bearer from axios interceptor (`getLiftngoBearerToken`).
  */
-export async function driverDispatchAcceptTrip(
-  tripId: string,
-  token: string | null,
-): Promise<DispatchActionResult> {
+export async function driverDispatchAcceptTrip(tripId: string): Promise<DispatchActionResult> {
   const store = useDriverDispatchStore.getState();
   if (store.actionLocks.has(tripId) || store.externalBusyTripIds.has(tripId)) {
     return { ok: false, message: "Trip is locked" };
@@ -26,7 +24,7 @@ export async function driverDispatchAcceptTrip(
   store.removeAvailableTrip(tripId);
 
   try {
-    const res = await acceptTrip(tripId, token);
+    const res = await acceptTrip(tripId);
     if (!res.ok) {
       store.upsertAvailableOffer(snapshot);
       store.unlockAction(tripId);
@@ -45,10 +43,7 @@ export async function driverDispatchAcceptTrip(
   }
 }
 
-export async function driverDispatchRejectTrip(
-  tripId: string,
-  token: string | null,
-): Promise<DispatchActionResult> {
+export async function driverDispatchRejectTrip(tripId: string): Promise<DispatchActionResult> {
   const store = useDriverDispatchStore.getState();
   if (store.actionLocks.has(tripId)) {
     return { ok: false, message: "Action in progress" };
@@ -57,7 +52,7 @@ export async function driverDispatchRejectTrip(
   store.lockAction(tripId, "reject");
   store.removeAvailableTrip(tripId);
   try {
-    const res = await rejectTrip(tripId, token);
+    const res = await rejectTrip(tripId);
     store.unlockAction(tripId);
     if (!res.ok) {
       if (snapshot) store.upsertAvailableOffer(snapshot);

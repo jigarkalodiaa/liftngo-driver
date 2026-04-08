@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getSession, signIn } from "next-auth/react";
 import { PencilIcon } from "@/components/icons";
 import BottomCta from "@/components/layout/BottomCta";
 import { useLocale } from "@/context/LocaleContext";
-import { DRIVER_AUTH_TOKEN_KEY } from "@/lib/driver/authConstants";
-import { resendOtp, verifyOtp, type DriverType } from "@/lib/driver/loginApi";
+import { DRIVER_AUTH_TOKEN_KEY, DRIVER_LOGIN_PHONE_SESSION_KEY } from "@/lib/driver/authConstants";
+import { DRIVER_ONBOARDING } from "@/lib/driver/onboardingRoutes";
+import { resendOtp } from "@/lib/driver/loginApi";
 import { toast } from "sonner";
 
 const OTP_LEN = 4;
@@ -14,11 +17,11 @@ const RESEND_SEC = 30;
 type OtpInputProps = {
   phone: string;
   onEditPhone: () => void;
-  onVerified: (driverType: DriverType, driverVerified: boolean) => void;
 };
 
-export default function OtpInput({ phone, onEditPhone, onVerified }: OtpInputProps) {
+export default function OtpInput({ phone, onEditPhone }: OtpInputProps) {
   const { t } = useLocale();
+  const router = useRouter();
   const [digits, setDigits] = useState<string[]>(() => Array(OTP_LEN).fill(""));
   const [active, setActive] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -103,10 +106,27 @@ export default function OtpInput({ phone, onEditPhone, onVerified }: OtpInputPro
     setLoading(true);
     setFieldError(null);
     try {
-      const { token, driverType, driverVerified } = await verifyOtp(phone, otpValue);
-      if (typeof window !== "undefined") localStorage.setItem(DRIVER_AUTH_TOKEN_KEY, token);
+      const result = await signIn("credentials", {
+        redirect: false,
+        mobile: phone,
+        otp: otpValue,
+      });
+      if (result?.error) {
+        const msg =
+          result.error === "CredentialsSignin" ? t("login.verifyFail") : result.error;
+        setFieldError(msg);
+        toast.error(msg);
+        return;
+      }
+      const session = await getSession();
+      if (typeof window !== "undefined") {
+        if (session?.accessToken) {
+          localStorage.setItem(DRIVER_AUTH_TOKEN_KEY, session.accessToken);
+        }
+        sessionStorage.setItem(DRIVER_LOGIN_PHONE_SESSION_KEY, phone);
+      }
       toast.success(t("login.signedIn"));
-      onVerified(driverType, driverVerified);
+      router.replace(DRIVER_ONBOARDING.dashboard);
     } catch (err) {
       const e = err as Error & { code?: string };
       const msg = e.message || t("login.verifyFail");

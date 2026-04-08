@@ -7,7 +7,7 @@
  * - Socket: `NEXT_PUBLIC_SOCKET_URL` → else ngrok sync → else localhost
  */
 
-const LOCAL_DEFAULT = "http://localhost:3001";
+const LOCAL_DEFAULT = "http://localhost:3001/api/v1";
 
 function trimOrigin(v: string | undefined): string | undefined {
   const t = v?.trim();

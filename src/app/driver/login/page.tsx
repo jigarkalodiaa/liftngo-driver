@@ -1,11 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useLocale } from "@/context/LocaleContext";
-import { DRIVER_ONBOARDING } from "@/lib/driver/onboardingRoutes";
-import { sendOtp, type DriverType } from "@/lib/driver/loginApi";
+import { sendOtp } from "@/lib/driver/loginApi";
 import LanguageSelectStep, { LanguageSelectHeader } from "./LanguageSelectStep";
 import MobileInput from "./MobileInput";
 import OtpInput from "./OtpInput";
@@ -13,7 +11,6 @@ import OtpInput from "./OtpInput";
 type Step = "lang" | "phone" | "otp";
 
 export default function DriverLoginPage() {
-  const router = useRouter();
   const { setLocale, t } = useLocale();
 
   /**
@@ -45,21 +42,6 @@ export default function DriverLoginPage() {
 
   const onEditPhone = useCallback(() => setStep("phone"), []);
 
-  const onVerified = useCallback(
-    (driverType: DriverType, driverVerified: boolean) => {
-      if (driverType === "new") {
-        router.replace(DRIVER_ONBOARDING.aadhaar);
-        return;
-      }
-      if (driverVerified) {
-        router.replace(DRIVER_ONBOARDING.dashboard);
-        return;
-      }
-      router.replace(DRIVER_ONBOARDING.applicationReview);
-    },
-    [router],
-  );
-
   return (
     <div className="flex min-h-dvh flex-col px-5 pt-6 pb-0">
       <LanguageSelectHeader />
@@ -72,7 +54,7 @@ export default function DriverLoginPage() {
             }}
           />
         ) : step === "otp" ? (
-          <OtpInput phone={phone} onEditPhone={onEditPhone} onVerified={onVerified} />
+          <OtpInput phone={phone} onEditPhone={onEditPhone} />
         ) : (
           <MobileInput phone={phone} onPhoneChange={setPhone} onSendOtp={onSendOtp} loading={loading} fieldError={fieldError} />
         )}

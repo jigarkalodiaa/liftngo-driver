@@ -1,4 +1,4 @@
-import { getLiftngoApiBaseUrl, mergeLiftngoFetchHeaders } from "@/config/liftngoApi";
+import axios from "axios";
 
 export type TripRestError = {
   ok: false;
@@ -8,46 +8,36 @@ export type TripRestError = {
 
 export type TripRestOk = { ok: true };
 
-function authHeaders(token: string | null): HeadersInit {
-  const h = new Headers({ "Content-Type": "application/json" });
-  if (token) h.set("Authorization", `Bearer ${token}`);
-  return mergeLiftngoFetchHeaders(h);
+function axiosErrorToTripRest(e: unknown): TripRestError {
+  if (axios.isAxiosError(e)) {
+    const status = e.response?.status ?? 0;
+    const raw = e.response?.data;
+    let message = e.message;
+    if (typeof raw === "string") message = raw;
+    else if (raw && typeof raw === "object" && "message" in raw && typeof (raw as { message: unknown }).message === "string") {
+      message = (raw as { message: string }).message;
+    }
+    return { ok: false, status, message };
+  }
+  const message = e instanceof Error ? e.message : "network_error";
+  return { ok: false, status: 0, message };
 }
 
-export async function acceptTrip(tripId: string, token: string | null): Promise<TripRestOk | TripRestError> {
-  const base = getLiftngoApiBaseUrl().replace(/\/$/, "");
+/** Accept trip — Bearer via global axios interceptors (QueryProvider). */
+export async function acceptTrip(tripId: string): Promise<TripRestOk | TripRestError> {
   try {
-    const res = await fetch(`${base}/trips/${encodeURIComponent(tripId)}/accept`, {
-      method: "PATCH",
-      headers: authHeaders(token),
-      credentials: "include",
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, status: res.status, message: text || res.statusText };
-    }
+    await axios.patch(`/trips/${encodeURIComponent(tripId)}/accept`);
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosErrorToTripRest(e);
   }
 }
 
-export async function rejectTrip(tripId: string, token: string | null): Promise<TripRestOk | TripRestError> {
-  const base = getLiftngoApiBaseUrl().replace(/\/$/, "");
+export async function rejectTrip(tripId: string): Promise<TripRestOk | TripRestError> {
   try {
-    const res = await fetch(`${base}/trips/${encodeURIComponent(tripId)}/reject`, {
-      method: "PATCH",
-      headers: authHeaders(token),
-      credentials: "include",
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, status: res.status, message: text || res.statusText };
-    }
+    await axios.patch(`/trips/${encodeURIComponent(tripId)}/reject`);
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosErrorToTripRest(e);
   }
 }

@@ -1,18 +1,14 @@
-import { getLiftngoApiBaseUrl, mergeLiftngoFetchHeaders } from "@/config/liftngoApi";
-import { getCustomerCurrentTripPath, getDriverActiveTripPath } from "@/config/dispatchPaths";
+import axios from "axios";
+import {
+  getCustomerCurrentTripPath,
+  getDriverActiveTripPath,
+  getDriverOnlinePatchPath,
+} from "@/config/dispatchPaths";
 import type { DispatchTrip } from "@/types/dispatch";
 import { normalizeStatusToMachine } from "@/lib/dispatch/tripStateMachine";
 
 export type DispatchRestError = { ok: false; status: number; message: string };
 export type DispatchRestOk<T> = { ok: true; data: T };
-
-function authHeaders(token: string | null): HeadersInit {
-  const h = new Headers({ "Content-Type": "application/json" });
-  if (token) h.set("Authorization", `Bearer ${token}`);
-  return mergeLiftngoFetchHeaders(h);
-}
-
-const base = () => getLiftngoApiBaseUrl().replace(/\/$/, "");
 
 function now() {
   return Date.now();
@@ -45,149 +41,103 @@ function parseTripPayload(raw: unknown): DispatchTrip | null {
   };
 }
 
-export async function fetchDriverActiveTrip(
-  token: string | null,
-): Promise<DispatchRestOk<DispatchTrip | null> | DispatchRestError> {
+function axiosToDispatchError(e: unknown): DispatchRestError {
+  if (axios.isAxiosError(e)) {
+    const status = e.response?.status ?? 0;
+    const raw = e.response?.data;
+    let message = e.message;
+    if (typeof raw === "string") message = raw;
+    else if (raw && typeof raw === "object" && "message" in raw && typeof (raw as { message: unknown }).message === "string") {
+      message = (raw as { message: string }).message;
+    }
+    return { ok: false, status, message };
+  }
+  const message = e instanceof Error ? e.message : "network_error";
+  return { ok: false, status: 0, message };
+}
+
+export async function fetchDriverActiveTrip(): Promise<DispatchRestOk<DispatchTrip | null> | DispatchRestError> {
   try {
-    const res = await fetch(`${base()}${getDriverActiveTripPath()}`, {
-      method: "GET",
-      headers: authHeaders(token),
-      credentials: "include",
+    const res = await axios.get<unknown>(getDriverActiveTripPath(), {
+      validateStatus: (status) => status === 204 || status === 404 || (status >= 200 && status < 300),
     });
     if (res.status === 404 || res.status === 204) return { ok: true, data: null };
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, status: res.status, message: text || res.statusText };
+    if (res.status < 200 || res.status >= 300) {
+      return { ok: false, status: res.status, message: res.statusText };
     }
-    const json = (await res.json()) as unknown;
+    const json = res.data as unknown;
     const wrapped =
       json && typeof json === "object" && "trip" in (json as object)
         ? (json as { trip: unknown }).trip
         : json;
     return { ok: true, data: parseTripPayload(wrapped) };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosToDispatchError(e);
   }
 }
 
-export async function fetchCustomerCurrentTrip(
-  token: string | null,
-): Promise<DispatchRestOk<DispatchTrip | null> | DispatchRestError> {
+export async function fetchCustomerCurrentTrip(): Promise<DispatchRestOk<DispatchTrip | null> | DispatchRestError> {
   try {
-    const res = await fetch(`${base()}${getCustomerCurrentTripPath()}`, {
-      method: "GET",
-      headers: authHeaders(token),
-      credentials: "include",
+    const res = await axios.get<unknown>(getCustomerCurrentTripPath(), {
+      validateStatus: (status) => status === 204 || status === 404 || (status >= 200 && status < 300),
     });
     if (res.status === 404 || res.status === 204) return { ok: true, data: null };
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, status: res.status, message: text || res.statusText };
+    if (res.status < 200 || res.status >= 300) {
+      return { ok: false, status: res.status, message: res.statusText };
     }
-    const json = (await res.json()) as unknown;
+    const json = res.data as unknown;
     const wrapped =
       json && typeof json === "object" && "trip" in (json as object)
         ? (json as { trip: unknown }).trip
         : json;
     return { ok: true, data: parseTripPayload(wrapped) };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosToDispatchError(e);
   }
 }
 
 export async function createTrip(
   body: Record<string, unknown>,
-  token: string | null,
 ): Promise<DispatchRestOk<{ tripId: string; trip?: DispatchTrip }> | DispatchRestError> {
   try {
-    const res = await fetch(`${base()}/trips`, {
-      method: "POST",
-      headers: authHeaders(token),
-      credentials: "include",
-      body: JSON.stringify(body),
-    });
-    const text = await res.text();
-    if (!res.ok) return { ok: false, status: res.status, message: text || res.statusText };
-    let json: unknown = {};
-    try {
-      json = text ? JSON.parse(text) : {};
-    } catch {
-      json = {};
-    }
-    const o = json as Record<string, unknown>;
+    const res = await axios.post<unknown>("/trips", body);
+    const json = res.data as Record<string, unknown>;
     const tripId =
-      typeof o.tripId === "string" ? o.tripId : typeof o.id === "string" ? (o.id as string) : "";
+      typeof json.tripId === "string" ? json.tripId : typeof json.id === "string" ? (json.id as string) : "";
     if (!tripId) return { ok: false, status: res.status, message: "missing tripId in response" };
-    return { ok: true, data: { tripId, trip: parseTripPayload(o.trip ?? o) ?? undefined } };
+    return { ok: true, data: { tripId, trip: parseTripPayload(json.trip ?? json) ?? undefined } };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosToDispatchError(e);
   }
 }
 
-export async function cancelTrip(
-  tripId: string,
-  token: string | null,
-): Promise<{ ok: true } | DispatchRestError> {
+export async function cancelTrip(tripId: string): Promise<{ ok: true } | DispatchRestError> {
   try {
-    const res = await fetch(`${base()}/trips/${encodeURIComponent(tripId)}/cancel`, {
-      method: "PATCH",
-      headers: authHeaders(token),
-      credentials: "include",
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, status: res.status, message: text || res.statusText };
-    }
+    await axios.patch(`/trips/${encodeURIComponent(tripId)}/cancel`);
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosToDispatchError(e);
   }
 }
 
-export async function patchDriverOnline(
-  online: boolean,
-  token: string | null,
-): Promise<{ ok: true } | DispatchRestError> {
+export async function patchDriverOnline(isOnline: boolean): Promise<{ ok: true } | DispatchRestError> {
   try {
-    const res = await fetch(`${base()}/drivers/online`, {
-      method: "PATCH",
-      headers: authHeaders(token),
-      credentials: "include",
-      body: JSON.stringify({ online }),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, status: res.status, message: text || res.statusText };
-    }
+    await axios.patch(getDriverOnlinePatchPath(), { isOnline });
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosToDispatchError(e);
   }
 }
 
-export async function patchDriverLocation(
-  loc: { lat: number; lng: number; heading?: number },
-  token: string | null,
-): Promise<{ ok: true } | DispatchRestError> {
+export async function patchDriverLocation(loc: {
+  lat: number;
+  lng: number;
+  heading?: number;
+}): Promise<{ ok: true } | DispatchRestError> {
   try {
-    const res = await fetch(`${base()}/drivers/location`, {
-      method: "PATCH",
-      headers: authHeaders(token),
-      credentials: "include",
-      body: JSON.stringify(loc),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, status: res.status, message: text || res.statusText };
-    }
+    await axios.patch("/drivers/location", loc);
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "network_error";
-    return { ok: false, status: 0, message };
+    return axiosToDispatchError(e);
   }
 }

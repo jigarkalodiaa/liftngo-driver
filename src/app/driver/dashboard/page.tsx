@@ -3,13 +3,16 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import DriverAvailabilityBottomCta from "@/components/driver/DriverAvailabilityBottomCta";
 import DriverAvailabilityPanel from "@/components/driver/DriverAvailabilityPanel";
+import DriverBreakdownSuspensionBanner from "@/components/driver/DriverBreakdownSuspensionBanner";
+import DriverWalletMinimumBanner from "@/components/driver/DriverWalletMinimumBanner";
 import DriverPartnerTierStrip from "@/components/driver/DriverPartnerTierStrip";
 import DashboardWalletSummary from "@/components/driver/DashboardWalletSummary";
 import DriverConnectivityBanner from "@/components/driver/DriverConnectivityBanner";
-import { BellIcon, MenuIcon } from "@/components/icons";
+import { BellIcon, ChatSupportIcon, MenuIcon } from "@/components/icons";
 import AuthGuard from "@/components/layout/AuthGuard";
 import BrandLogo from "@/components/layout/BrandLogo";
 import VerifiedDriverGuard from "@/components/layout/VerifiedDriverGuard";
@@ -28,7 +31,9 @@ import { useDriverAppMode } from "@/hooks/useDriverAppMode";
 import { useDriverSocket } from "@/hooks/useDriverSocket";
 import { useSocket } from "@/hooks/useSocket";
 import DriverIncomingTripsPanel from "@/components/liftngo/DriverIncomingTripsPanel";
-import { disconnectDriverSocket, emitDriverAvailability } from "@/lib/socket/driverSocketClient";
+import { emitDriverAvailabilitySynced } from "@/lib/driver/emitDriverAvailabilitySynced";
+import { isWalletBelowMinimum } from "@/lib/driver/walletConstants";
+import { disconnectDriverSocket } from "@/lib/socket/driverSocketClient";
 import { TripStatus } from "@/lib/trip/tripStatus";
 import { useDriverAvailabilityStore } from "@/stores/driverAvailabilityStore";
 import { useDriverEngagedTimeStore } from "@/stores/driverEngagedTimeStore";
@@ -36,7 +41,9 @@ import { useDriverSuspensionStore } from "@/stores/driverSuspensionStore";
 import { useDriverTripStore } from "@/stores/driverTripStore";
 import { useDriverDispatchStore } from "@/stores/driverDispatchStore";
 import { useDriverWalletStore } from "@/stores/driverWalletStore";
+import { useDriverPerformanceStore } from "@/stores/driverPerformanceStore";
 import type { SideMenuAction } from "@/components/driver/DriverSideMenu";
+import { usePatchDriverOnlineMutation } from "@/hooks/dispatch";
 
 const DriverTripLifecycleView = dynamic(
   () => import("@/components/driver/trip/DriverTripLifecycleView"),
@@ -49,13 +56,6 @@ const DriverProfileSheet = dynamic(() => import("@/components/driver/DriverProfi
 const DriverNotificationsPanel = dynamic(() => import("@/components/driver/DriverNotificationsPanel"));
 const DriverSupportSheet = dynamic(() => import("@/components/driver/DriverSupportSheet"));
 const NewOrderRequestSheet = dynamic(() => import("@/components/driver/NewOrderRequestSheet"));
-
-function emitAvailabilitySynced() {
-  const receiving = useDriverAvailabilityStore.getState().isReceivingTrips;
-  const suspended = useDriverSuspensionStore.getState().isSuspended();
-  const seg = getDriverTaggingFromToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY))?.segment;
-  emitDriverAvailability(receiving && !suspended, seg);
-}
 
 function MapPlaceholder() {
   return (
@@ -95,12 +95,17 @@ function DashboardContent() {
   const { clearSelfie } = useDriverSelfie();
   const { clearVehicle } = useDriverVehicle();
 
+  const { mutate: patchDriverOnline } = usePatchDriverOnlineMutation();
+
   const activeTrip = useDriverTripStore((s) => s.activeTrip);
   const appMode = useDriverAppMode();
   const isReceivingTrips = useDriverAvailabilityStore((s) => s.isReceivingTrips);
   const setReceivingTrips = useDriverAvailabilityStore((s) => s.setReceivingTrips);
   const suspensionPermanent = useDriverSuspensionStore((s) => s.permanent);
   const suspensionUntilMs = useDriverSuspensionStore((s) => s.suspendedUntilMs);
+  const fetchPerformance = useDriverPerformanceStore((s) => s.fetchPerformance);
+  const serverSnapshot = useDriverPerformanceStore((s) => s.serverSnapshot);
+  const [breakdownClock, setBreakdownClock] = useState(0);
 
   const isSuspended = useMemo(
     () =>
@@ -108,15 +113,29 @@ function DashboardContent() {
     [suspensionPermanent, suspensionUntilMs],
   );
 
+  const breakdownSuspended = useMemo(() => {
+    if (!serverSnapshot?.breakdownSuspended) return false;
+    if (!serverSnapshot.breakdownSuspendedUntil) return true;
+    return Date.now() < new Date(serverSnapshot.breakdownSuspendedUntil).getTime();
+  }, [serverSnapshot, breakdownClock]);
+
+  const walletBalance = useDriverWalletStore((s) => s.walletBalance);
+  const walletBelowMin = useMemo(() => isWalletBelowMinimum(walletBalance), [walletBalance]);
+
+  const isFullySuspended = isSuspended || breakdownSuspended || walletBelowMin;
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
-  const driverSocketUserId = useMemo(
-    () => parseDriverToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY))?.phone ?? null,
-    [],
-  );
+  const driverSocketUserId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const token = localStorage.getItem(DRIVER_AUTH_TOKEN_KEY);
+    return (
+      parseDriverToken(token)?.phone ?? sessionStorage.getItem(DRIVER_LOGIN_PHONE_SESSION_KEY) ?? null
+    );
+  }, []);
 
   const { connected: socketConnected } = useSocket(driverSocketUserId, "DRIVER");
 
@@ -166,6 +185,31 @@ function DashboardContent() {
   }, []);
 
   useEffect(() => {
+    void fetchPerformance();
+    const id = window.setInterval(() => void fetchPerformance(), 120_000);
+    return () => window.clearInterval(id);
+  }, [fetchPerformance]);
+
+  useEffect(() => {
+    const snap = serverSnapshot;
+    if (!snap?.breakdownSuspendedUntil) return;
+    const end = new Date(snap.breakdownSuspendedUntil).getTime();
+    const left = end - Date.now();
+    if (left <= 0) {
+      void fetchPerformance();
+      return;
+    }
+    const id = window.setTimeout(() => void fetchPerformance(), left + 500);
+    return () => window.clearTimeout(id);
+  }, [serverSnapshot, fetchPerformance]);
+
+  useEffect(() => {
+    if (!breakdownSuspended) return;
+    const id = window.setInterval(() => setBreakdownClock((n) => n + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, [breakdownSuspended]);
+
+  useEffect(() => {
     if (suspensionPermanent || suspensionUntilMs == null) return;
     const delay = Math.max(0, suspensionUntilMs - Date.now() + 500);
     const id = window.setTimeout(() => {
@@ -181,18 +225,17 @@ function DashboardContent() {
   }, []);
 
   useEffect(() => {
-    if (!isSuspended) return;
+    if (!isFullySuspended) return;
     setReceivingTrips(false);
-    const seg = getDriverTaggingFromToken(localStorage.getItem(DRIVER_AUTH_TOKEN_KEY))?.segment;
-    emitDriverAvailability(false, seg);
-  }, [isSuspended, setReceivingTrips]);
+    emitDriverAvailabilitySynced();
+  }, [isFullySuspended, setReceivingTrips]);
 
   useEffect(() => {
     if (socketConnected) {
       setSocketHadConnected(true);
-      emitAvailabilitySynced();
+      emitDriverAvailabilitySynced();
     }
-  }, [socketConnected]);
+  }, [socketConnected, serverSnapshot, isReceivingTrips, walletBalance]);
 
   useEffect(() => {
     const done = useDriverTripStore.persist.onFinishHydration(() => {
@@ -205,19 +248,19 @@ function DashboardContent() {
   }, []);
 
   useEffect(() => {
-    if (!isReceivingTrips || appMode === DriverAppMode.TRIP_MODE || isSuspended) {
-      if (!isReceivingTrips || isSuspended) setIncomingOrder(null);
+    if (!isReceivingTrips || appMode === DriverAppMode.TRIP_MODE || isFullySuspended) {
+      if (!isReceivingTrips || isFullySuspended) setIncomingOrder(null);
       return;
     }
     const timerId = window.setTimeout(() => {
       setIncomingOrder(DUMMY_INCOMING_ORDER);
     }, 2200);
     return () => window.clearTimeout(timerId);
-  }, [isReceivingTrips, appMode, isSuspended]);
+  }, [isReceivingTrips, appMode, isFullySuspended]);
 
   /** Partner-time signal (local): counts foreground time while online for trips or on an active trip. */
   useEffect(() => {
-    const engaged = Boolean(activeTrip) || (isReceivingTrips && !isSuspended);
+    const engaged = Boolean(activeTrip) || (isReceivingTrips && !isFullySuspended);
     const pulse = () => useDriverEngagedTimeStore.getState().pulse(engaged);
     pulse();
     const id = window.setInterval(pulse, 5000);
@@ -227,7 +270,7 @@ function DashboardContent() {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [activeTrip, isReceivingTrips, isSuspended]);
+  }, [activeTrip, isReceivingTrips, isFullySuspended]);
 
   const unreadNotificationCount = useMemo(() => {
     void notificationBadgeTick;
@@ -247,9 +290,11 @@ function DashboardContent() {
     localStorage.removeItem("liftngo-driver-wallet");
     localStorage.removeItem("liftngo-driver-availability");
     localStorage.removeItem("liftngo-driver-suspension");
+    localStorage.removeItem("liftngo-driver-performance");
     localStorage.removeItem("liftngo-driver-engaged-time");
     localStorage.removeItem(DRIVER_AUTH_TOKEN_KEY);
     sessionStorage.removeItem(DRIVER_LOGIN_PHONE_SESSION_KEY);
+    void signOut({ redirect: false });
     clearDriverOnboardingProfile();
     disconnectDriverSocket();
     useDriverDispatchStore.getState().reset();
@@ -290,8 +335,23 @@ function DashboardContent() {
   const onGoOnline = useCallback(() => {
     useDriverSuspensionStore.getState().refreshFromClock();
     if (useDriverSuspensionStore.getState().isSuspended()) return;
+    void useDriverPerformanceStore.getState().fetchPerformance();
+    const snap = useDriverPerformanceStore.getState().serverSnapshot;
+    if (snap?.breakdownSuspended) {
+      const until = snap.breakdownSuspendedUntil
+        ? new Date(snap.breakdownSuspendedUntil).getTime()
+        : null;
+      if (!until || Date.now() < until) {
+        toast.error(t("dashboard.breakdownOnlineBlocked"));
+        return;
+      }
+    }
+    if (isWalletBelowMinimum(useDriverWalletStore.getState().walletBalance)) {
+      toast.error(t("dashboard.walletMinimumOnlineBlocked"));
+      return;
+    }
     setReceivingTrips(true);
-    emitAvailabilitySynced();
+    emitDriverAvailabilitySynced();
     toast.success(t("dashboard.nowOnlineCelebration"));
     if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
       navigator.vibrate([35, 25, 35]);
@@ -300,7 +360,7 @@ function DashboardContent() {
 
   const onGoOffline = useCallback(() => {
     setReceivingTrips(false);
-    emitAvailabilitySynced();
+    emitDriverAvailabilitySynced();
     toast.message(t("dashboard.offline"));
   }, [setReceivingTrips, t]);
 
@@ -309,6 +369,10 @@ function DashboardContent() {
   const handleAcceptOrder = useCallback(async () => {
     const order = incomingOrderRef.current;
     if (!order) return;
+    if (isWalletBelowMinimum(useDriverWalletStore.getState().walletBalance)) {
+      toast.error(t("dashboard.walletMinimumAcceptBlocked"));
+      return;
+    }
     setAssigningTrip(true);
     try {
       const result = await tryAssignTrip(order);
@@ -347,7 +411,7 @@ function DashboardContent() {
   }, [clearIncomingOrder, t]);
 
   const isTripMode = appMode === DriverAppMode.TRIP_MODE;
-  const expectingTripAssignments = isReceivingTrips && !isTripMode && !isSuspended;
+  const expectingTripAssignments = isReceivingTrips && !isTripMode && !isFullySuspended;
   const showConnectivityPad =
     !browserOnline || (!socketConnected && (expectingTripAssignments || isTripMode));
 
@@ -428,6 +492,14 @@ function DashboardContent() {
             </button>
             <button
               type="button"
+              onClick={() => setSupportOpen(true)}
+              className="flex size-11 items-center justify-center rounded-2xl border border-white/80 bg-white shadow-md text-[var(--color-text-primary)]"
+              aria-label={t("dashboard.helpButtonAria")}
+            >
+              <ChatSupportIcon className="size-[22px]" />
+            </button>
+            <button
+              type="button"
               onClick={openSideMenu}
               className="flex size-11 items-center justify-center rounded-2xl border border-white/80 bg-white shadow-md text-[var(--color-text-primary)]"
               aria-label={t("dashboard.menu")}
@@ -440,15 +512,17 @@ function DashboardContent() {
 
       {!isTripMode ? (
         <>
-          <div className="relative z-[20] flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-4 pb-4 pt-3 pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto">
-            <div className="pointer-events-auto space-y-3">
+          <div className="relative z-[20] flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-3 pt-2 pb-[max(1rem,calc(5rem+env(safe-area-inset-bottom)))] pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto">
+            <div className="pointer-events-auto space-y-2">
               <DriverAvailabilityPanel
                 hidden={false}
                 isReceivingTrips={isReceivingTrips}
                 showWaitingNudge={isReceivingTrips && !incomingOrder}
               />
             </div>
-            <div className="mt-3 space-y-3">
+            <div className="mt-2 space-y-2">
+              <DriverBreakdownSuspensionBanner />
+              <DriverWalletMinimumBanner />
               <DriverPartnerTierStrip hidden={false} />
               <DashboardWalletSummary
                 onOpenWallet={openWallet}
@@ -459,10 +533,10 @@ function DashboardContent() {
             </div>
           </div>
           <DriverAvailabilityBottomCta
-            hidden={isSuspended}
+            hidden={isFullySuspended}
             isReceivingTrips={isReceivingTrips}
-            onGoOnline={onGoOnline}
-            onGoOffline={onGoOffline}
+            onGoOnline={() => patchDriverOnline(true)}
+            onGoOffline={() => patchDriverOnline(false)}
           />
         </>
       ) : null}

@@ -69,10 +69,10 @@ export default function TripEnhancedMapCard({
     <motion.div
       ref={containerRef}
       layout
-      className="overflow-hidden rounded-2xl border border-[var(--color-gray-200)] bg-white shadow-md"
+      className="overflow-hidden rounded-xl border border-[var(--color-gray-200)] bg-white shadow-sm"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-[var(--color-gray-100)] px-3 py-2">
-        <p className="text-xs font-semibold text-[var(--color-text-secondary)]">{title}</p>
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--color-gray-100)] px-2.5 py-1.5">
+        <p className="text-[11px] font-semibold text-[var(--color-text-secondary)]">{title}</p>
         <div className="flex items-center gap-1">
           {badgeText ? (
             <span className="rounded-full bg-[var(--color-primary)]/15 px-2 py-0.5 text-[10px] font-bold text-[var(--color-primary)]">
@@ -88,7 +88,7 @@ export default function TripEnhancedMapCard({
           </button>
         </div>
       </div>
-      <div className="relative h-[200px] w-full bg-[var(--color-gray-200)]">
+      <div className="relative h-[min(42vw,160px)] min-h-[140px] w-full bg-[var(--color-gray-200)]">
         <iframe title={title} src={embedUrl} className="size-full border-0" loading="lazy" />
         <div
           className="pointer-events-none absolute left-3 top-3 flex size-9 items-center justify-center rounded-full border-2 border-white bg-[var(--color-primary)] text-xs font-bold text-white shadow-md"
@@ -96,21 +96,21 @@ export default function TripEnhancedMapCard({
         >
           {phase === "pickup" ? "P" : "D"}
         </div>
-        <p className="pointer-events-none absolute bottom-2 left-2 right-2 rounded-lg bg-black/55 px-2 py-1 text-center text-[10px] font-medium text-white">
+        <p className="pointer-events-none absolute bottom-1.5 left-1.5 right-1.5 rounded-md bg-black/55 px-1.5 py-0.5 text-center text-[9px] font-medium leading-snug text-white">
           {t("tripUX.mapRouteHint")}
         </p>
       </div>
-      <div className="grid gap-2 border-t border-[var(--color-gray-100)] p-3 sm:grid-cols-2">
+      <div className="grid gap-1.5 border-t border-[var(--color-gray-100)] p-2 sm:grid-cols-2">
         <a
           href={dirUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center rounded-xl bg-[var(--color-primary)] py-3 text-center text-sm font-bold text-white hover:opacity-95"
+          className="flex min-h-10 items-center justify-center rounded-lg bg-[var(--color-primary)] px-2 py-2 text-center text-xs font-bold text-white hover:opacity-95"
         >
           {mapsLabel}
         </a>
         {callCustomerSlot ? (
-          <div className="[&_a]:flex [&_a]:h-full [&_a]:min-h-[48px] [&_a]:items-center [&_a]:justify-center [&_a]:rounded-xl [&_a]:border-2 [&_a]:border-[var(--color-primary)] [&_a]:bg-white [&_a]:text-sm [&_a]:font-bold [&_a]:text-[var(--color-primary)]">
+          <div className="[&_a]:flex [&_a]:h-full [&_a]:min-h-10 [&_a]:items-center [&_a]:justify-center [&_a]:rounded-lg [&_a]:border-2 [&_a]:border-[var(--color-primary)] [&_a]:bg-white [&_a]:px-2 [&_a]:py-2 [&_a]:text-xs [&_a]:font-bold [&_a]:text-[var(--color-primary)]">
             {callCustomerSlot}
           </div>
         ) : (

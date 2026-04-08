@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -10,16 +11,23 @@ import TripEarningsSummarySheet, {
 import TripEnhancedMapCard from "@/components/driver/trip/TripEnhancedMapCard";
 import TripGuidanceBanner from "@/components/driver/trip/TripGuidanceBanner";
 import TripStepProgress from "@/components/driver/trip/TripStepProgress";
-import { ArrowLeftIcon } from "@/components/icons";
+import { ArrowLeftIcon, MenuIcon } from "@/components/icons";
 import { appendTripHistory } from "@/lib/driver/tripHistoryStorage";
+import { useCancelTripVehicleBreakdownMutation } from "@/hooks/dispatch";
+import { getNestAccessToken } from "@/services/driverPerformanceApi";
 import { telPickupHref } from "@/lib/driver/tripAssignment";
 import { onTripCancelled } from "@/lib/socket/driverSocketClient";
 import { PaymentMode, TripStatus } from "@/lib/trip/tripStatus";
 import type { DriverTripSnapshot } from "@/lib/trip/tripTypes";
+import { isWalletBelowMinimum } from "@/lib/driver/walletConstants";
 import { computePaymentWalletEffect } from "@/lib/trip/walletLedger";
 import { useLocale } from "@/context/LocaleContext";
-import { useTripLiveLocation } from "@/hooks/useTripLiveLocation";
+import { useTripPhaseGeolocation, type TripGeolocationSnapshot } from "@/hooks/useTripPhaseGeolocation";
+import { useDriverPerformanceStore } from "@/stores/driverPerformanceStore";
 import { useDriverTripStore } from "@/stores/driverTripStore";
+import { useDriverWalletStore } from "@/stores/driverWalletStore";
+
+const DriverSupportSheet = dynamic(() => import("@/components/driver/DriverSupportSheet"), { ssr: false });
 
 function formatInr(n: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -33,6 +41,23 @@ function formatPhone(phone10: string): string {
   const d = phone10.replace(/\D/g, "").slice(-10);
   if (d.length !== 10) return phone10;
   return `+91 ${d.slice(0, 5)} ${d.slice(5)}`;
+}
+
+function canCancelVehicleBreakdown(status: TripStatus): boolean {
+  const ok: TripStatus[] = [
+    TripStatus.ASSIGNED,
+    TripStatus.EN_ROUTE_TO_PICKUP,
+    TripStatus.ARRIVED_AT_PICKUP,
+    TripStatus.LOADING_CONFIRMED,
+    TripStatus.TRIP_STARTED,
+    TripStatus.EN_ROUTE_TO_DROP,
+  ];
+  return ok.includes(status);
+}
+
+/** Nest trip `id` is a UUID string. */
+function isNestTripId(tripId: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tripId);
 }
 
 function toastForStatus(status: TripStatus, t: (k: string) => string): string | null {
@@ -62,7 +87,7 @@ function toastForStatus(status: TripStatus, t: (k: string) => string): string | 
 
 function StatusChip({ label }: { label: string }) {
   return (
-    <span className="inline-block max-w-[120px] truncate rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--color-primary)]">
+    <span className="inline-block max-w-[100px] truncate rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--color-primary)]">
       {label}
     </span>
   );
@@ -71,7 +96,7 @@ function StatusChip({ label }: { label: string }) {
 type PrimaryBlockProps = {
   trip: DriverTripSnapshot;
   actionLoading: boolean;
-  onStartTripModal: () => void;
+  geo: TripGeolocationSnapshot;
   onCompleteTripModal: () => void;
   onCollectCashModal: () => void;
   t: (k: string, vars?: Record<string, string | number>) => string;
@@ -80,77 +105,149 @@ type PrimaryBlockProps = {
 function PrimaryActionBlock({
   trip,
   actionLoading,
-  onStartTripModal,
+  geo,
   onCompleteTripModal,
   onCollectCashModal,
   t,
 }: PrimaryBlockProps) {
   const transitionTo = useDriverTripStore((s) => s.transitionTo);
+  const completePickupToOnTrip = useDriverTripStore((s) => s.completePickupToOnTrip);
+  const completeDropToPaymentGate = useDriverTripStore((s) => s.completeDropToPaymentGate);
   const confirmUnloading = useDriverTripStore((s) => s.confirmUnloading);
   const beginCashCollection = useDriverTripStore((s) => s.beginCashCollection);
+  const applyPaymentCompletion = useDriverTripStore((s) => s.applyPaymentCompletion);
 
-  const btn =
-    "flex w-full items-center justify-center rounded-xl bg-[var(--color-primary)] py-3.5 text-sm font-bold text-white hover:opacity-95 disabled:pointer-events-none disabled:opacity-45";
+  const ctaClass =
+    "flex min-h-[3.5rem] w-full items-center justify-center rounded-2xl bg-[var(--color-primary)] px-4 py-4 text-base font-bold text-white shadow-md hover:opacity-95 disabled:pointer-events-none disabled:opacity-40";
 
-  const Btn = ({
+  const Cta = ({
     children,
     onClick,
+    disabled,
   }: {
     children: ReactNode;
     onClick: () => void;
+    disabled?: boolean;
   }) => (
     <motion.button
       type="button"
-      disabled={actionLoading}
-      whileTap={actionLoading ? undefined : { scale: 0.98 }}
+      disabled={disabled || actionLoading}
+      whileTap={actionLoading || disabled ? undefined : { scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className={btn}
+      className={ctaClass}
       onClick={onClick}
     >
       {children}
     </motion.button>
   );
 
+  const Hint = ({ children }: { children: ReactNode }) => (
+    <p className="mb-2 text-center text-[13px] font-medium leading-snug text-amber-800">{children}</p>
+  );
+
+  const pickupNeedsGeo =
+    trip.status === TripStatus.EN_ROUTE_TO_PICKUP || trip.status === TripStatus.ARRIVED_AT_PICKUP;
+  const canStartTripByGeo =
+    !pickupNeedsGeo || (geo.ready && geo.nearPickup && !geo.permissionDenied);
+
+  const onStartTripMerged = () => {
+    if (pickupNeedsGeo) {
+      if (geo.permissionDenied) {
+        toast.error(t("tripFlow.enableLocationPickup"));
+        return;
+      }
+      if (!geo.ready) {
+        toast.error(t("tripFlow.waitingGps"));
+        return;
+      }
+      if (!geo.nearPickup) {
+        toast.error(t("tripFlow.reachPickupFirst"));
+        return;
+      }
+    }
+    void completePickupToOnTrip();
+  };
+
+  const onCompleteDeliveryMerged = () => {
+    if (geo.permissionDenied) {
+      toast.error(t("tripFlow.enableLocationDrop"));
+      return;
+    }
+    if (!geo.ready) {
+      toast.error(t("tripFlow.waitingGps"));
+      return;
+    }
+    if (!geo.nearDrop) {
+      toast.error(t("tripFlow.reachDropFirst"));
+      return;
+    }
+    void completeDropToPaymentGate();
+  };
+
   switch (trip.status) {
     case TripStatus.ASSIGNED:
       return (
-        <Btn onClick={() => void transitionTo(TripStatus.EN_ROUTE_TO_PICKUP)}>{t("tripFlow.startNav")}</Btn>
+        <Cta onClick={() => void transitionTo(TripStatus.EN_ROUTE_TO_PICKUP)}>{t("tripFlow.navToPickup")}</Cta>
       );
     case TripStatus.EN_ROUTE_TO_PICKUP:
-      return (
-        <Btn onClick={() => void transitionTo(TripStatus.ARRIVED_AT_PICKUP)}>{t("tripFlow.reachedPickup")}</Btn>
-      );
     case TripStatus.ARRIVED_AT_PICKUP:
-      return (
-        <Btn onClick={() => void transitionTo(TripStatus.LOADING_CONFIRMED)}>{t("tripFlow.confirmLoading")}</Btn>
-      );
     case TripStatus.LOADING_CONFIRMED:
-      return <Btn onClick={onStartTripModal}>{t("tripFlow.startTrip")}</Btn>;
+      return (
+        <>
+          {pickupNeedsGeo && geo.permissionDenied ? (
+            <Hint>{t("tripFlow.enableLocationPickup")}</Hint>
+          ) : null}
+          {pickupNeedsGeo && !geo.permissionDenied && !geo.ready ? <Hint>{t("tripFlow.waitingGps")}</Hint> : null}
+          {pickupNeedsGeo && geo.ready && !geo.nearPickup ? <Hint>{t("tripFlow.reachPickupFirst")}</Hint> : null}
+          <Cta disabled={!canStartTripByGeo} onClick={onStartTripMerged}>
+            {t("tripFlow.startTrip")}
+          </Cta>
+        </>
+      );
     case TripStatus.TRIP_STARTED:
       return (
-        <Btn onClick={() => void transitionTo(TripStatus.EN_ROUTE_TO_DROP)}>{t("tripFlow.navToDrop")}</Btn>
+        <Cta onClick={() => void transitionTo(TripStatus.EN_ROUTE_TO_DROP)}>{t("tripFlow.navToDrop")}</Cta>
       );
     case TripStatus.EN_ROUTE_TO_DROP:
       return (
-        <Btn onClick={() => void transitionTo(TripStatus.ARRIVED_AT_DROP)}>{t("tripFlow.reachedDrop")}</Btn>
+        <>
+          {geo.permissionDenied ? <Hint>{t("tripFlow.enableLocationDrop")}</Hint> : null}
+          {!geo.permissionDenied && !geo.ready ? <Hint>{t("tripFlow.waitingGps")}</Hint> : null}
+          {geo.ready && !geo.nearDrop && !geo.permissionDenied ? <Hint>{t("tripFlow.reachDropFirst")}</Hint> : null}
+          <Cta
+            disabled={!geo.ready || !geo.nearDrop || geo.permissionDenied}
+            onClick={onCompleteDeliveryMerged}
+          >
+            {t("tripFlow.completeDelivery")}
+          </Cta>
+        </>
       );
     case TripStatus.ARRIVED_AT_DROP:
-      return <Btn onClick={() => void confirmUnloading()}>{t("tripFlow.confirmUnloading")}</Btn>;
+      return <Cta onClick={() => void confirmUnloading()}>{t("tripFlow.confirmUnloading")}</Cta>;
     case TripStatus.UNLOADING_CONFIRMED:
       if (trip.paymentMode === PaymentMode.CASH) {
-        return <Btn onClick={() => void beginCashCollection()}>{t("tripFlow.collectCash")}</Btn>;
+        return <Cta onClick={() => void beginCashCollection()}>{t("tripFlow.collectCash")}</Cta>;
       }
       return (
-        <p className="text-center text-sm text-[var(--color-text-secondary)]">{t("tripFlow.prepaidContinue")}</p>
+        <Cta
+          onClick={() => {
+            void (async () => {
+              const ok = await transitionTo(TripStatus.PAYMENT_COMPLETED);
+              if (ok) applyPaymentCompletion();
+            })();
+          }}
+        >
+          {t("tripFlow.confirmPrepaidContinue")}
+        </Cta>
       );
     case TripStatus.PAYMENT_PENDING:
       return (
-        <Btn onClick={onCollectCashModal}>
+        <Cta onClick={onCollectCashModal}>
           {t("tripFlow.confirmCashCollected", { amount: formatInr(trip.fareInr) })}
-        </Btn>
+        </Cta>
       );
     case TripStatus.PAYMENT_COMPLETED:
-      return <Btn onClick={onCompleteTripModal}>{t("tripFlow.completeTrip")}</Btn>;
+      return <Cta onClick={onCompleteTripModal}>{t("tripFlow.completeTrip")}</Cta>;
     default:
       return null;
   }
@@ -166,17 +263,20 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
   const trip = useDriverTripStore((s) => s.activeTrip);
   const actionLoading = useDriverTripStore((s) => s.actionLoading);
   const paymentMismatchAlert = useDriverTripStore((s) => s.paymentMismatchAlert);
-  const transitionTo = useDriverTripStore((s) => s.transitionTo);
   const finalizeCashPayment = useDriverTripStore((s) => s.finalizeCashPayment);
   const completeTrip = useDriverTripStore((s) => s.completeTrip);
   const reset = useDriverTripStore((s) => s.reset);
 
-  const [startTripOpen, setStartTripOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
   const [collectOpen, setCollectOpen] = useState(false);
   const [collectLoading, setCollectLoading] = useState(false);
   const [earningsOpen, setEarningsOpen] = useState(false);
   const [earningsData, setEarningsData] = useState<TripEarningsSummaryPayload | null>(null);
+  const [breakdownWarnOpen, setBreakdownWarnOpen] = useState(false);
+  const [breakdownConfirmOpen, setBreakdownConfirmOpen] = useState(false);
+  const cancelBreakdownMut = useCancelTripVehicleBreakdownMutation();
+  const [tripMenuOpen, setTripMenuOpen] = useState(false);
+  const [tripHelpOpen, setTripHelpOpen] = useState(false);
 
   const tripIdRef = useRef<string | null>(null);
   const prevStatusRef = useRef<TripStatus | null>(null);
@@ -185,16 +285,31 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
     toast(t("tripFlow.gpsHint"));
   }, [t]);
 
-  useTripLiveLocation(
-    trip?.tripId ?? null,
-    trip?.status === TripStatus.EN_ROUTE_TO_PICKUP || trip?.status === TripStatus.EN_ROUTE_TO_DROP,
-    gpsDeniedToast,
-  );
+  const tripGeo = useTripPhaseGeolocation(trip, gpsDeniedToast);
 
   useEffect(() => {
     return onTripCancelled((p) => {
       useDriverTripStore.getState().handleRemoteCancel(p.tripId, p.reason);
     });
+  }, []);
+
+  useEffect(() => {
+    if (!tripMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTripMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [tripMenuOpen]);
+
+  const closeTripMenu = useCallback(() => setTripMenuOpen(false), []);
+  const openBreakdownFromMenu = useCallback(() => {
+    setTripMenuOpen(false);
+    setBreakdownWarnOpen(true);
+  }, []);
+  const openTripHelp = useCallback(() => {
+    setTripMenuOpen(false);
+    setTripHelpOpen(true);
   }, []);
 
   useEffect(() => {
@@ -223,6 +338,45 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
 
   if (!trip) return null;
 
+  const handleFinalBreakdownCancel = async () => {
+    const snap = useDriverTripStore.getState().activeTrip;
+    if (!snap) return;
+    if (!getNestAccessToken()) {
+      toast.error(t("tripFlow.cancelBreakdownNeedAuth"));
+      return;
+    }
+    if (!isNestTripId(snap.tripId)) {
+      toast.error(t("tripFlow.cancelBreakdownNeedTripId"));
+      setBreakdownConfirmOpen(false);
+      return;
+    }
+    try {
+      const res = await cancelBreakdownMut.mutateAsync(snap.tripId);
+      if (!res.ok) {
+        toast.error(t("tripFlow.cancelBreakdownFailed"), { description: res.message });
+        return;
+      }
+      appendTripHistory({
+        id: snap.tripId,
+        orderId: snap.orderId,
+        fareInr: snap.fareInr,
+        paymentMode: snap.paymentMode,
+        completedAt: Date.now(),
+        driverShareInr: 0,
+        commissionInr: 0,
+        outcome: "cancelled",
+        cancelReason: "VEHICLE_BREAKDOWN",
+      });
+      reset();
+      useDriverPerformanceStore.getState().invalidate();
+      setBreakdownConfirmOpen(false);
+      toast.success(t("tripFlow.cancelBreakdownSuccess"));
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(t("tripFlow.cancelBreakdownFailed"), { description: message });
+    }
+  };
+
   const showPickupDetails =
     trip.status === TripStatus.ASSIGNED ||
     trip.status === TripStatus.EN_ROUTE_TO_PICKUP ||
@@ -236,11 +390,6 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
     trip.status === TripStatus.UNLOADING_CONFIRMED ||
     trip.status === TripStatus.PAYMENT_PENDING ||
     trip.status === TripStatus.PAYMENT_COMPLETED;
-
-  const handleConfirmStartTrip = async () => {
-    setStartTripOpen(false);
-    await transitionTo(TripStatus.TRIP_STARTED);
-  };
 
   const handleConfirmComplete = async () => {
     setCompleteOpen(false);
@@ -259,15 +408,24 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
         commissionInr: effect.commission,
         outcome: "completed",
       });
-      setEarningsData({
-        orderId: snap.orderId,
-        fareInr: snap.fareInr,
-        paymentMode: snap.paymentMode,
-        driverShare: effect.driverShare,
-        walletDelta: effect.walletDelta,
-      });
-      setEarningsOpen(true);
-      toast.success(t("tripFlow.tripCompleted"));
+      const walletBalance = useDriverWalletStore.getState().walletBalance;
+      if (isWalletBelowMinimum(walletBalance)) {
+        setEarningsData({
+          orderId: snap.orderId,
+          fareInr: snap.fareInr,
+          paymentMode: snap.paymentMode,
+          driverShare: effect.driverShare,
+          walletDelta: effect.walletDelta,
+        });
+        setEarningsOpen(true);
+      } else {
+        toast.success(
+          t("tripFlow.tripCompletedCompact", {
+            share: formatInr(effect.driverShare),
+            wallet: formatInr(walletBalance),
+          }),
+        );
+      }
     }
   };
 
@@ -293,10 +451,10 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
   const statusHuman = trip.status.replace(/_/g, " ");
 
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col bg-[var(--color-gray-50)]">
+    <div className="fixed inset-0 z-[90] flex min-h-0 flex-col bg-[var(--color-gray-50)]">
       <header
-        className={`flex shrink-0 items-center gap-3 border-b border-[var(--color-gray-200)] bg-white px-3 pb-3 shadow-sm ${
-          connectivityPad ? "pt-12 sm:pt-14" : "pt-[max(0.75rem,env(safe-area-inset-top))]"
+        className={`flex shrink-0 items-center gap-2 border-b border-[var(--color-gray-200)] bg-white px-3 pb-2 shadow-sm ${
+          connectivityPad ? "pt-12 sm:pt-14" : "pt-[max(0.5rem,env(safe-area-inset-top))]"
         }`}
       >
         <button
@@ -314,15 +472,63 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
           <h1 className="text-sm font-bold text-[var(--color-text-primary)]">{t("tripFlow.activeTrip")}</h1>
           <p className="truncate text-xs text-[var(--color-text-secondary)]">{trip.orderId}</p>
         </div>
-        <StatusChip label={statusHuman} />
+        <div className="flex shrink-0 items-center gap-1">
+          <StatusChip label={statusHuman} />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setTripMenuOpen((o) => !o)}
+              className="rounded-lg p-2 text-[var(--color-text-primary)] hover:bg-[var(--color-gray-100)]"
+              aria-expanded={tripMenuOpen}
+              aria-haspopup="menu"
+              aria-label={t("tripFlow.tripMenuAria")}
+            >
+              <MenuIcon />
+            </button>
+            {tripMenuOpen ? (
+              <>
+                <button
+                  type="button"
+                  className="fixed inset-0 z-[95] cursor-default bg-black/20"
+                  aria-label={t("tripFlow.closeTripMenu")}
+                  onClick={closeTripMenu}
+                />
+                <div
+                  className="absolute right-0 top-[calc(100%+6px)] z-[96] min-w-[220px] rounded-xl border border-[var(--color-gray-200)] bg-white py-1 shadow-lg"
+                  role="menu"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={openTripHelp}
+                    className="flex w-full px-4 py-2.5 text-left text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-gray-50)]"
+                  >
+                    {t("tripFlow.menuTripHelp")}
+                  </button>
+                  {canCancelVehicleBreakdown(trip.status) ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={openBreakdownFromMenu}
+                      disabled={actionLoading || cancelBreakdownMut.isPending}
+                      className="flex w-full px-4 py-2.5 text-left text-sm font-bold text-red-800 hover:bg-red-50 disabled:pointer-events-none disabled:opacity-45"
+                    >
+                      {t("tripFlow.cancelBreakdown")}
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-32 pt-4">
-        <div className="mx-auto max-w-lg space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 pt-2 pb-[max(1rem,calc(5.5rem+env(safe-area-inset-bottom)))]">
+        <div className="mx-auto max-w-lg space-y-2">
           <TripStepProgress status={trip.status} />
           <TripGuidanceBanner status={trip.status} />
 
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--color-gray-200)] bg-white px-3 py-2.5 text-xs shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-gray-200)] bg-white px-2.5 py-2 text-[11px] shadow-sm">
             <span>
               {t("tripFlow.paymentLabel")}:{" "}
               <strong className="text-[var(--color-text-primary)]">{trip.paymentMode}</strong>
@@ -335,7 +541,7 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
           </div>
 
           {paymentMismatchAlert ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
               {paymentMismatchAlert}
             </div>
           ) : null}
@@ -350,13 +556,13 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
                 tripStatus={trip.status}
                 callCustomerSlot={callPickupSlot}
               />
-              <div className="rounded-2xl border border-[var(--color-gray-200)] bg-white p-4 shadow-md">
-                <p className="text-xs font-semibold uppercase text-[var(--color-text-secondary)]">
+              <div className="rounded-xl border border-[var(--color-gray-200)] bg-white p-3 shadow-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
                   {t("tripFlow.pickup")}
                 </p>
-                <p className="mt-1 font-bold text-[var(--color-text-primary)]">{trip.pickup.title}</p>
-                <p className="text-sm text-[var(--color-text-secondary)]">{trip.pickup.subtitle}</p>
-                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{trip.contactName}</p>
+                <p className="mt-0.5 text-sm font-bold text-[var(--color-text-primary)]">{trip.pickup.title}</p>
+                <p className="text-xs leading-snug text-[var(--color-text-secondary)]">{trip.pickup.subtitle}</p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{trip.contactName}</p>
               </div>
             </>
           ) : null}
@@ -370,44 +576,36 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
                 phase="drop"
                 tripStatus={trip.status}
               />
-              <div className="rounded-2xl border border-[var(--color-gray-200)] bg-white p-4 shadow-md">
-                <p className="text-xs font-semibold uppercase text-[var(--color-text-secondary)]">
+              <div className="rounded-xl border border-[var(--color-gray-200)] bg-white p-3 shadow-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
                   {t("tripFlow.dropOff")}
                 </p>
-                <p className="mt-1 font-bold text-[var(--color-text-primary)]">{trip.drop.title}</p>
-                <p className="text-sm text-[var(--color-text-secondary)]">{trip.drop.subtitle}</p>
+                <p className="mt-0.5 text-sm font-bold text-[var(--color-text-primary)]">{trip.drop.title}</p>
+                <p className="text-xs leading-snug text-[var(--color-text-secondary)]">{trip.drop.subtitle}</p>
               </div>
             </>
           ) : null}
 
           {(trip.status === TripStatus.EN_ROUTE_TO_PICKUP || trip.status === TripStatus.EN_ROUTE_TO_DROP) && (
-            <p className="text-center text-xs text-[var(--color-text-secondary)]">{t("tripFlow.liveShare")}</p>
+            <p className="pb-1 text-center text-[11px] leading-snug text-[var(--color-text-secondary)]">
+              {t("tripFlow.liveShare")}
+            </p>
           )}
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-[60] border-t border-[var(--color-gray-200)] bg-white p-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
-        <div className="mx-auto max-w-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-[60] border-t border-[var(--color-gray-200)]/90 bg-white/95 shadow-[0_-6px_20px_rgba(0,0,0,0.06)] backdrop-blur-md">
+        <div className="mx-auto max-w-lg px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           <PrimaryActionBlock
             trip={trip}
             actionLoading={actionLoading}
-            onStartTripModal={() => setStartTripOpen(true)}
+            geo={tripGeo}
             onCompleteTripModal={() => setCompleteOpen(true)}
             onCollectCashModal={() => setCollectOpen(true)}
             t={t}
           />
         </div>
       </div>
-
-      <ConfirmDialog
-        open={startTripOpen}
-        title={t("tripFlow.startTripTitle")}
-        description={t("tripFlow.startTripDesc")}
-        confirmLabel={t("tripFlow.startTripConfirm")}
-        onCancel={() => setStartTripOpen(false)}
-        onConfirm={() => void handleConfirmStartTrip()}
-        loading={actionLoading}
-      />
 
       <ConfirmDialog
         open={completeOpen}
@@ -438,6 +636,32 @@ export default function DriverTripLifecycleView({ connectivityPad = false }: Dri
         }}
         data={earningsData}
       />
+
+      <ConfirmDialog
+        open={breakdownWarnOpen}
+        title={t("tripFlow.cancelBreakdownWarnTitle")}
+        description={t("tripFlow.cancelBreakdownWarnBody")}
+        confirmLabel={t("tripFlow.cancelBreakdownContinue")}
+        onCancel={() => setBreakdownWarnOpen(false)}
+        onConfirm={() => {
+          setBreakdownWarnOpen(false);
+          setBreakdownConfirmOpen(true);
+        }}
+        loading={cancelBreakdownMut.isPending}
+      />
+
+      <ConfirmDialog
+        open={breakdownConfirmOpen}
+        title={t("tripFlow.cancelBreakdownFinalTitle")}
+        description={t("tripFlow.cancelBreakdownFinalDesc")}
+        confirmLabel={t("tripFlow.cancelBreakdownConfirm")}
+        variant="danger"
+        onCancel={() => setBreakdownConfirmOpen(false)}
+        onConfirm={() => void handleFinalBreakdownCancel()}
+        loading={cancelBreakdownMut.isPending || actionLoading}
+      />
+
+      <DriverSupportSheet open={tripHelpOpen} onClose={() => setTripHelpOpen(false)} variant="trip" />
     </div>
   );
 }

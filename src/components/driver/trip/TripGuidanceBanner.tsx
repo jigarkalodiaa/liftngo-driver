@@ -46,16 +46,16 @@ export default function TripGuidanceBanner({ status }: TripGuidanceBannerProps) 
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-4 shadow-sm"
+      className="rounded-xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-3 shadow-sm"
     >
-      <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-primary)]">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--color-primary)]">
         {t("tripUX.guideNowLabel")}
       </p>
-      <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">{t(now)}</p>
-      <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-secondary)]">
+      <p className="mt-0.5 text-xs font-semibold leading-snug text-[var(--color-text-primary)]">{t(now)}</p>
+      <p className="mt-2 text-[10px] font-bold uppercase tracking-wide text-[var(--color-text-secondary)]">
         {t("tripUX.guideNextLabel")}
       </p>
-      <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">{t(next)}</p>
+      <p className="mt-0.5 text-[11px] leading-snug text-[var(--color-text-secondary)]">{t(next)}</p>
     </motion.div>
   );
 }

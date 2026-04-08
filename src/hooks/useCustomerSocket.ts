@@ -13,6 +13,7 @@ const LOCATION_STALE_MS = 30_000;
 
 export type UseCustomerSocketOptions = {
   enabled: boolean;
+  /** Dependency only: bump when customer auth changes. REST uses axios interceptor Bearer when set. */
   authToken: string | null;
 };
 
@@ -32,7 +33,7 @@ export function useCustomerSocket(options: UseCustomerSocketOptions) {
     const detach = attachCustomerDispatchEngine(s);
 
     const runSync = () => {
-      void reconcileDispatchState("CUSTOMER", authToken);
+      void reconcileDispatchState("CUSTOMER");
     };
 
     const onReconnect = () => {

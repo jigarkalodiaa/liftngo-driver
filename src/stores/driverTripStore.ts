@@ -21,25 +21,6 @@ import { useDriverWalletStore } from "@/stores/driverWalletStore";
 
 const wallet = () => useDriverWalletStore.getState();
 
-type TripStore = {
-  activeTrip: DriverTripSnapshot | null;
-  actionLoading: boolean;
-  paymentMismatchAlert: string | null;
-  startFromAssignment: (assigned: AssignedPickupTrip, order: IncomingOrderRequest, driverId: string) => void;
-  transitionTo: (next: TripStatus) => Promise<boolean>;
-  applyPaymentCompletion: () => void;
-  /** ARRIVED_AT_DROP → UNLOADING_CONFIRMED; prepaid then → PAYMENT_COMPLETED + wallet. */
-  confirmUnloading: () => Promise<boolean>;
-  /** UNLOADING_CONFIRMED + CASH → PAYMENT_PENDING. */
-  beginCashCollection: () => Promise<boolean>;
-  /** PAYMENT_PENDING → PAYMENT_COMPLETED + wallet (after amount verified in UI). */
-  finalizeCashPayment: (declaredAmountInr: number) => Promise<boolean>;
-  /** PAYMENT_COMPLETED → TRIP_COMPLETED, clear trip, leave socket room. */
-  completeTrip: () => Promise<boolean>;
-  handleRemoteCancel: (tripId: string, reason?: string) => void;
-  reset: () => void;
-};
-
 function emitForTransition(tripId: string, _from: TripStatus, to: TripStatus): void {
   emitStatusUpdate(tripId, to);
   if (to === TripStatus.EN_ROUTE_TO_PICKUP) {
@@ -53,6 +34,49 @@ function emitForTransition(tripId: string, _from: TripStatus, to: TripStatus): v
   } else if (to === TripStatus.TRIP_COMPLETED) {
     emitDriverEvent({ type: DriverEventType.TRIP_COMPLETED, tripId, status: to });
   }
+}
+
+type TripStore = {
+  activeTrip: DriverTripSnapshot | null;
+  actionLoading: boolean;
+  paymentMismatchAlert: string | null;
+  startFromAssignment: (assigned: AssignedPickupTrip, order: IncomingOrderRequest, driverId: string) => void;
+  transitionTo: (next: TripStatus) => Promise<boolean>;
+  /**
+   * One driver action: ARRIVED_AT_PICKUP → LOADING_CONFIRMED → TRIP_STARTED (valid transitions only).
+   * Does not replace backend rules; same emits as three separate transitions.
+   */
+  completePickupToOnTrip: () => Promise<boolean>;
+  /**
+   * One driver action from EN_ROUTE_TO_DROP: ARRIVED_AT_DROP → UNLOADING_CONFIRMED → (prepaid) PAYMENT_COMPLETED.
+   */
+  completeDropToPaymentGate: () => Promise<boolean>;
+  applyPaymentCompletion: () => void;
+  confirmUnloading: () => Promise<boolean>;
+  beginCashCollection: () => Promise<boolean>;
+  finalizeCashPayment: (declaredAmountInr: number) => Promise<boolean>;
+  completeTrip: () => Promise<boolean>;
+  handleRemoteCancel: (tripId: string, reason?: string) => void;
+  reset: () => void;
+};
+
+async function runTransitionCore(get: () => TripStore, set: (p: Partial<TripStore>) => void, next: TripStatus) {
+  const activeTrip = get().activeTrip;
+  if (!activeTrip) return false;
+  const from = activeTrip.status;
+  if (!canTransition(from, next)) return false;
+  try {
+    assertTransition(from, next);
+  } catch {
+    return false;
+  }
+  await new Promise((r) => setTimeout(r, 280));
+  const cur = get().activeTrip;
+  if (!cur) return false;
+  const updated: DriverTripSnapshot = { ...cur, status: next, updatedAt: Date.now() };
+  set({ activeTrip: updated });
+  emitForTransition(updated.tripId, from, next);
+  return true;
 }
 
 export const useDriverTripStore = create<TripStore>()(
@@ -76,28 +100,70 @@ export const useDriverTripStore = create<TripStore>()(
       transitionTo: async (next) => {
         const { activeTrip, actionLoading } = get();
         if (!activeTrip || actionLoading) return false;
-        const from = activeTrip.status;
-        if (!canTransition(from, next)) {
-          toast.error(translateDriver("tripFlow.invalidStep"));
-          return false;
-        }
+        set({ actionLoading: true });
         try {
-          assertTransition(from, next);
-        } catch {
-          toast.error(translateDriver("tripFlow.invalidStep"));
+          const ok = await runTransitionCore(get, set, next);
+          if (!ok) toast.error(translateDriver("tripFlow.invalidStep"));
+          return ok;
+        } finally {
+          set({ actionLoading: false });
+        }
+      },
+
+      completePickupToOnTrip: async () => {
+        if (get().actionLoading) return false;
+        const trip = get().activeTrip;
+        if (!trip) return false;
+
+        let chain: TripStatus[] = [];
+        if (trip.status === TripStatus.EN_ROUTE_TO_PICKUP) {
+          chain = [TripStatus.ARRIVED_AT_PICKUP, TripStatus.LOADING_CONFIRMED, TripStatus.TRIP_STARTED];
+        } else if (trip.status === TripStatus.ARRIVED_AT_PICKUP) {
+          chain = [TripStatus.LOADING_CONFIRMED, TripStatus.TRIP_STARTED];
+        } else if (trip.status === TripStatus.LOADING_CONFIRMED) {
+          chain = [TripStatus.TRIP_STARTED];
+        } else {
           return false;
         }
 
         set({ actionLoading: true });
         try {
-          await new Promise((r) => setTimeout(r, 280));
-          const updated: DriverTripSnapshot = {
-            ...activeTrip,
-            status: next,
-            updatedAt: Date.now(),
-          };
-          set({ activeTrip: updated });
-          emitForTransition(updated.tripId, from, next);
+          for (const next of chain) {
+            const ok = await runTransitionCore(get, set, next);
+            if (!ok) {
+              toast.error(translateDriver("tripFlow.invalidStep"));
+              return false;
+            }
+          }
+          return true;
+        } finally {
+          set({ actionLoading: false });
+        }
+      },
+
+      completeDropToPaymentGate: async () => {
+        if (get().actionLoading) return false;
+        const trip = get().activeTrip;
+        if (!trip || trip.status !== TripStatus.EN_ROUTE_TO_DROP) return false;
+
+        set({ actionLoading: true });
+        try {
+          for (const next of [TripStatus.ARRIVED_AT_DROP, TripStatus.UNLOADING_CONFIRMED]) {
+            const ok = await runTransitionCore(get, set, next);
+            if (!ok) {
+              toast.error(translateDriver("tripFlow.invalidStep"));
+              return false;
+            }
+          }
+          const t2 = get().activeTrip;
+          if (t2?.paymentMode === PaymentMode.PREPAID) {
+            const ok3 = await runTransitionCore(get, set, TripStatus.PAYMENT_COMPLETED);
+            if (!ok3) {
+              toast.error(translateDriver("tripFlow.invalidStep"));
+              return false;
+            }
+            get().applyPaymentCompletion();
+          }
           return true;
         } finally {
           set({ actionLoading: false });

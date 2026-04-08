@@ -54,14 +54,11 @@ export function detachAllDispatchTimers(): void {
   notifiedNewTripIds.clear();
 }
 
-/** After reconnect: REST truth + rejoin rooms. */
-export async function reconcileDispatchState(
-  role: LiftngoSocketRole,
-  token: string | null,
-): Promise<void> {
+/** After reconnect: REST truth + rejoin rooms. Bearer from axios interceptor. */
+export async function reconcileDispatchState(role: LiftngoSocketRole): Promise<void> {
   dispatchSocketLog("socket", "reconcile:start", { role });
   if (role === "DRIVER") {
-    const r = await fetchDriverActiveTrip(token);
+    const r = await fetchDriverActiveTrip();
     if (r.ok) {
       if (r.data) {
         useDriverDispatchStore.getState().setActiveTripFromServer(r.data);
@@ -72,7 +69,7 @@ export async function reconcileDispatchState(
     }
     useDriverDispatchStore.getState().touchLastSocketSync();
   } else {
-    const r = await fetchCustomerCurrentTrip(token);
+    const r = await fetchCustomerCurrentTrip();
     if (r.ok) {
       if (r.data) {
         useCustomerDispatchStore.getState().setFromServerTrip(r.data);

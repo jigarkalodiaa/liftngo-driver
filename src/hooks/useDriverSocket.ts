@@ -14,6 +14,7 @@ import type { AttachDispatchEngineOptions } from "@/services/socketEvents";
 
 export type UseDriverSocketOptions = AttachDispatchEngineOptions & {
   enabled: boolean;
+  /** When this changes (e.g. after login), reconciliation runs again. REST Bearer comes from axios interceptor. */
   authToken: string | null;
 };
 
@@ -35,7 +36,7 @@ export function useDriverSocket(options: UseDriverSocketOptions) {
     const detachEngine = attachDriverDispatchEngine(s, { notifyNewTrip, playSoundOnNewTrip });
 
     const runSync = () => {
-      void reconcileDispatchState("DRIVER", authToken);
+      void reconcileDispatchState("DRIVER");
     };
 
     const onReconnect = () => {
